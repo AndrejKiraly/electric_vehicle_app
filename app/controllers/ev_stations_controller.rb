@@ -314,7 +314,7 @@ class EvStationsController < ApplicationController
                     is_operational_status: is_operational_status ? is_operational_status : false,
                     is_fast_charge_capable: is_fast_charge_capable ? is_fast_charge_capable : false,
                     charging_level: charging_level ? charging_level : "unknown",
-                    charging_level_comment: charging_level_comment ? charging_level_comment : "unknown",
+                    #charging_level_comment: charging_level_comment ? charging_level_comment : "unknown",
                     current_type: current_type ? current_type : "unknown",
                     amps: amps ? amps : 0,
                     voltage: voltage ? voltage : 0,
