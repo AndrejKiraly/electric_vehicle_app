@@ -190,7 +190,7 @@ class EvStationsController < ApplicationController
         apikey= ENV['openChargeMapApiKey']
         latitude = request.headers['latitude'] 
         longitude = request.headers['longitude']
-        countrycode = "sk"
+        countrycode = params[:countrycode]
         request_url_openChargeMap= "https://api.openchargemap.io/v3/poi?key=#{apikey}&maxresults=1000&countrycode=#{countrycode}"
         response = RestClient.get(request_url_openChargeMap)
         if response.code == 200
