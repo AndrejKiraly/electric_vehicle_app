@@ -14,6 +14,6 @@ class WebhooksController < ApplicationController
 
 
         # Example: Send a response back to the webhook sender
-        render json: { message: 'Webhook received successfully',data:  }, status: :ok
+        render json: { message: 'Webhook received successfully'  }, status: :ok
     end
 end
