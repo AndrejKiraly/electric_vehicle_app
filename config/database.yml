@@ -81,6 +81,9 @@ test:
 #
 production:
   <<: *default
-  database: electric_vehicle_app_production
-  username: electric_vehicle_app
-  password: <%= ENV["ELECTRIC_VEHICLE_APP_DATABASE_PASSWORD"] %>
+  host: <%= ENV['DATABASE_URL'] %>
+  username: <%= ENV['Username'] %>
+  password: <%= ENV['Password'] %>
+  # database: electric_vehicle_app_production
+  # username: electric_vehicle_app
+  # password: <%= ENV["ELECTRIC_VEHICLE_APP_DATABASE_PASSWORD"] %>

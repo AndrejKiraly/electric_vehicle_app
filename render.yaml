@@ -1,0 +1,11 @@
+databases:
+- name: ev_vehicles_api
+  databaseName: ev_vehicles_api
+  user: ev_vehicles_api
+  plan: free
+  region: frankfurt
+  ipAllowList:
+  - source: 0.0.0.0/0
+    description: everywhere
+  postgresMajorVersion: "14"
+version: "1"

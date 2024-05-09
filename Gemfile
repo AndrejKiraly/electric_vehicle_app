@@ -29,7 +29,17 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
+gem 'rest-client'
+#env file for api keys
+gem 'dotenv-rails'
+gem 'rack-cors'
+gem 'devise', '~> 4.9', '>= 4.9.3'
+gem 'devise_token_auth', git:"https://github.com/lynndylanhurley/devise_token_auth"
 
+
+
+
+gem "fast-polylines", "~> 2.0.0"
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
