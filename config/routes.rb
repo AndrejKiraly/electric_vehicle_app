@@ -25,8 +25,8 @@ Rails.application.routes.draw do
   delete '/connections/:id', to: 'connections#destroy'
 
   
-
-  #post '/webhook', to: 'webhook#create'
+  get '/webhook', to: 'webhook#index'
+  post '/webhook', to: 'webhook#create'
 
   get '/enode_vehicles', to: 'enode_vehicles#index'
   get '/enode_vehicles/user_vehicles', to: 'enode_vehicles#user_vehicles'
