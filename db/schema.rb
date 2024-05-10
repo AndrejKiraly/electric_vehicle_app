@@ -10,9 +10,27 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_09_133243) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_10_114745) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "chargings", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "vehicle_id", null: false
+    t.bigint "ev_station_id"
+    t.integer "battery_level_start", null: false
+    t.integer "battery_level_end"
+    t.float "price", default: 0.0
+    t.integer "energy_used", default: 0
+    t.integer "rating", default: 0
+    t.string "comment", default: ""
+    t.datetime "start_time", null: false
+    t.datetime "end_time"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ev_station_id"], name: "index_chargings_on_ev_station_id"
+    t.index ["user_id"], name: "index_chargings_on_user_id"
+  end
 
   create_table "connections", force: :cascade do |t|
     t.bigint "ev_station_id", null: false
@@ -107,6 +125,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_09_133243) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
+  add_foreign_key "chargings", "ev_stations"
+  add_foreign_key "chargings", "users"
   add_foreign_key "connections", "ev_stations"
   add_foreign_key "connections", "users", column: "created_by_id"
   add_foreign_key "connections", "users", column: "updated_by_id"

@@ -29,8 +29,16 @@ Rails.application.routes.draw do
   post '/webhooks', to: 'webhooks#create'
 
   get '/enode_vehicles', to: 'enode_vehicles#index'
-  get '/enode_vehicles/user_vehicles', to: 'enode_vehicles#user_vehicles'
+  get '/enode_vehicles/user_vehicles', to: 'enode_vehicles#show_user_vehicles'
+  get '/enode_vehicles/:id', to: 'enode_vehicles#show_user_vehicle'
   post '/enode_vehicles', to: 'enode_vehicles#create'
+
+
+  get '/chargings', to: 'chargings#index'
+  get '/chargings/:id', to: 'chargings#show'
+  post '/chargings', to: 'chargings#create'
+  patch '/chargings/:id', to: 'chargings#update'
+  delete '/chargings/:id', to: 'chargings#destroy'
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

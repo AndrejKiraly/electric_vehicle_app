@@ -1,6 +1,6 @@
 class EnodeVehiclesController < ApplicationController
 
-    before_action :authenticate_user!, only: [:user_vehicles,:create, :patch, :delete]
+    before_action :authenticate_user!, only: [:show_user_vehicles,:create, :patch, :delete]
 
 
     def index
@@ -15,7 +15,7 @@ class EnodeVehiclesController < ApplicationController
         render json: enode_vehicles#data.map { |vehicle| { id: vehicle["id"], }}
     end
 
-    def user_vehicles 
+    def show_user_vehicles
         enode_access_code = login_to_enode
         if enode_access_code.nil?
             render json: { message: 'Enode vehicles index failed'}
@@ -24,6 +24,16 @@ class EnodeVehiclesController < ApplicationController
         data = enode_user_vehicles["data"]
         puts "data #{enode_user_vehicles}" 
         render json: enode_user_vehicles
+    end
+
+    def show_user_vehicle
+        enode_access_code = login_to_enode
+        if enode_access_code.nil?
+            render json: { message: 'Enode vehicles index failed', status: 500}
+        end
+        enode_user_vehicle = get_enode_vehicle(enode_access_code, params[:id] )
+        render json:  enode_user_vehicle.to_json, status: :ok
+        
     end
 
     def create
