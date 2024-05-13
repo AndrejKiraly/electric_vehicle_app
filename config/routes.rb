@@ -30,7 +30,7 @@ Rails.application.routes.draw do
 
   get '/enode_vehicles', to: 'enode_vehicles#index'
   get '/enode_vehicles/user_vehicles', to: 'enode_vehicles#show_user_vehicles'
-  get '/enode_vehicles/:id', to: 'enode_vehicles#show_user_vehicle'
+  get '/enode_vehicles/:id(.:format)', to: 'enode_vehicles#show_user_vehicle'
   post '/enode_vehicles', to: 'enode_vehicles#create'
 
 

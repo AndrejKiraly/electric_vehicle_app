@@ -11,6 +11,7 @@ class WebhooksController < ApplicationController
 
         # Example: Log the webhook data
         Rails.logger.info("Webhook received: #{params}")
+        puts "Webhook received: #{params}"
 
 
         # Example: Send a response back to the webhook sender

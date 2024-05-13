@@ -1,5 +1,6 @@
 class EvStation < ApplicationRecord
     has_many :connections
+    has_many :chargings, through: :connections
     EARTH_RADIUS = 6371.0
   
     scope :near, ->  (latitude, longitude, distance) {

@@ -8,7 +8,8 @@ class CreateChargings < ActiveRecord::Migration[7.1]
       t.string :vehicle_id, null: false
 
       # Foreign key relationship with ev_stations table
-      t.belongs_to :ev_station, index: true, foreign_key: true
+      #t.belongs_to :ev_station, index: true, foreign_key: true
+      t.belongs_to :connection, index: true, foreign_key: true
 
       # Battery level information
       t.integer :battery_level_start, null: false
