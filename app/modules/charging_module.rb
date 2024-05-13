@@ -1,4 +1,4 @@
-module ChargingLibrary
+module ChargingModule
     TAX_FEE = 0.2
 
     def self.calculateChargingTime(battery_level, connection_power, battery_capacity, charge_limit, max_current)
