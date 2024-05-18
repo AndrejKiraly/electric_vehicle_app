@@ -31,8 +31,6 @@ class ConnectionsController < ApplicationController
         #connection_params[:created_by_id] = current
         @connection.created_by_id = User.where(uid: request.headers['uid']).first.id
         @connection.updated_by_id = User.where(uid: request.headers['uid']).first.id
-
-
         if @connection.save
             render json: @connection, status: :created
         else

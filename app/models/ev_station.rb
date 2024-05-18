@@ -1,6 +1,6 @@
 class EvStation < ApplicationRecord
-    has_many :connections
-    has_many :chargings, through: :connections
+    has_many :connections, dependent: :destroy
+    has_many :chargings, through: :connections, dependent: :destroy
     has_and_belongs_to_many :amenities
     belongs_to :usage_type
     #accepts_nested_attributes_for :amenities

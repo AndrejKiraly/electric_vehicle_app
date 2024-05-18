@@ -396,6 +396,18 @@ class EvStationsController < ApplicationController
     @ev_station.destroy!
   end
 
+  def destroy_multiple
+    @ev_stations = EvStation.where(country: params[:country])
+
+    if @ev_stations.destroy_all
+      render json: { message: "Stations deleted successfully" }
+    else
+      render json: { message: "Failed to delete stations" }
+    end
+
+    
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_ev_station
