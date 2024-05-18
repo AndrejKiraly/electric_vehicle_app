@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   put '/ev_stations/:id(.:format)', to: 'ev_stations#update'
   patch '/ev_stations/:id(.:format)', to: 'ev_stations#update'
   delete '/ev_stations/:id', to: 'ev_stations#destroy'
+  delete '/ev_stations', to: 'ev_stations#destroy_all'
   
   get '/connections', to: 'connections#index'
   get '/connections/:id', to: 'connections#show'
