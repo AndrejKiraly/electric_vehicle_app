@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  id: 1
+  formal_name: MyString
+  is_discontinued: false
+  is_obsolete: false
+  title: MyString
+
+two:
+  id: 1
+  formal_name: MyString
+  is_discontinued: false
+  is_obsolete: false
+  title: MyString

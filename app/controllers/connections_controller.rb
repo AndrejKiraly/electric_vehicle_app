@@ -71,8 +71,8 @@ class ConnectionsController < ApplicationController
             :updated_by_id, 
             :created_at,
             :charging_level,
-            :current_type,
-            :connection_type,
+            :current_type_id,
+            :connection_type_id,
          )
 
          

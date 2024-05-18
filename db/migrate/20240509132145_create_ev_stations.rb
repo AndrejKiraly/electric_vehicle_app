@@ -20,9 +20,12 @@ class CreateEvStations < ActiveRecord::Migration[7.1]
       t.boolean "is_membership_required"
       t.boolean "is_access_key_required"
       t.boolean "is_pay_at_location"
+
+      
+
       t.boolean "is_free", default: false #nie
       t.string "open_hours", default: "" #nie
-      t.string "parking_type", default: "" #nechcem asi zatial
+     
       t.string "access_type_title", default: "" #nvm
       t.string "access_comments", default: "" #nvm
       t.string "energy_source", default: ""

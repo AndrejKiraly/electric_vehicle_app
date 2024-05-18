@@ -51,14 +51,25 @@ class EvStationsController < ApplicationController
     #ev_stations_with_param = ev_stations_with_param.near(latitude, longitude, searching_distance) 
     
     
-    render json: ev_stations.map { |station| {id: station.id, name: station.name, latitude: station.latitude, longitude: station.longitude, free: station.is_free,address_line: station.address_line, rating: station.rating, distance: station.distance(latitude, longitude) , connections: station.connections.map { |connection| {type: connection.connection_type, power: connection.power_kw, is_fast_charge_capable: connection.is_fast_charge_capable, current_type: connection.current_type} } } }
+    render json: ev_stations, each_serializer: CompactEvStationSerializerSerializer
   
 
   end
 
   # GET /ev_stations/1
   def show
-    render json: { ev_station: @ev_station, connections: @ev_station.connections }
+    render json: @ev_station
+  end
+
+  def show_chargings_for_station
+    #Charging.find(1).connection.ev_station.id
+    @station = EvStation.find(params[:id])
+    @chargings = @station.chargings
+
+    render json:  @chargings
+    
+    #{station: @station, connections: @station.connections.map {|connection| {id: connection.id, chargings: connection.chargings.map {|charging| {id: charging.id, user_id: charging.user_id, vehicle_id: charging.vehicle_id, connection_id: charging.connection_id, battery_level_start: charging.battery_level_start, battery_level_end: charging.battery_level_end, price: charging.price, energy_used: charging.energy_used, rating: charging.rating, comment: charging.comment, start_time: charging.start_time, end_time: charging.end_time}}}}}
+
   end
 
   def show_polyline
@@ -95,7 +106,6 @@ class EvStationsController < ApplicationController
   def create    
     # Single station creation logic 
     station_data = JSON.parse(request.body.read)
-
       # Check if the station is unique using the class method
       if EvStation.is_unique(station_data)
         # Station is unique, proceed with creating the record
@@ -124,6 +134,8 @@ class EvStationsController < ApplicationController
           created_by_id: User.where(uid: request.headers["uid"]).first.id,
           updated_by_id: User.where(uid: request.headers["uid"]).first.id,
           uuid: station_data['source'],
+          usage_type_id: station_data['usage_type_id'],
+          amenity_ids: station_data['amenity_ids']
         )
 
 
@@ -215,7 +227,6 @@ class EvStationsController < ApplicationController
               post_code = station_data["AddressInfo"]["Postcode"]
               phone_number = station_data["AddressInfo"]["ContactTelephone1"] || "unknown"
               email = station_data["AddressInfo"]["ContactEmail"] || "unknown"
-              access_comments = station_data["AddressInfo"]["AccessComments"] || "unknown"
             end
             uuid = station_data["UUID"]
             if station_data["DataProvider"].present?
@@ -225,10 +236,9 @@ class EvStationsController < ApplicationController
             updated_by_id = 1            
             
             if station_data["UsageType"].present?
-              access_type_title = station_data["UsageType"]["Title"] || "unknown"
-              is_membership_required = station_data["UsageType"]["IsMembershipRequired"] 
-              is_access_key_required = station_data["UsageType"]["IsAccessKeyRequired"]
-              is_pay_at_location = station_data["UsageType"]["IsPayAtLocation"]
+              usage_type_id = station_data["UsageType"]["ID"]
+            else
+              usage_type_id = 0
             end
             
             limit_time = "Unknown"
@@ -259,12 +269,8 @@ class EvStationsController < ApplicationController
               user_rating_total: 0,
               phone_number: phone_number ? phone_number : "",
               email: email ? email : "",
+              usage_type_id: usage_type_id ? usage_type_id : 0,
               operator_website_url: operator_website_url ? operator_website_url : "",
-              access_type_title: access_type_title ? access_type_title : "",
-              access_comments: access_comments ? access_comments : "",
-              is_membership_required: is_membership_required,
-              is_access_key_required: is_access_key_required,
-              is_pay_at_location: is_pay_at_location,
               limit_time: limit_time ? limit_time : "",
               instruction_for_user: instruction_for_user ? instruction_for_user : "",
               energy_source: energy_source ? energy_source : "",
@@ -279,7 +285,9 @@ class EvStationsController < ApplicationController
                 connections_data.each_with_index do |connection_data, index|
                 begin
                   if connection_data["ConnectionType"].present?
-                    connection_type= connection_data["ConnectionType"]["Title"]
+                    connection_type_id = connection_data["ConnectionType"]["ID"]
+                  else
+                    connection_type_id = 0
                   end
                   if connection_data["StatusType"].present?
                     is_operational_status = connection_data["StatusType"]["IsOperational"]
@@ -291,10 +299,10 @@ class EvStationsController < ApplicationController
                   end
 
                   if connection_data["CurrentType"].present?
-                    current_type = connection_data["CurrentType"]["Title"]
+                    current_type_id = connection_data["CurrentType"]["ID"]
                   end
                   if connection_data["Amps"].present?
-                    amps = connection_data["Amps"] 
+                    amps = connection_data["Amps"]
                   end
                   if connection_data["Voltage"].present?
                     voltage = connection_data["Voltage"]
@@ -310,12 +318,12 @@ class EvStationsController < ApplicationController
           
                   # Create a new Connection object for each connection
                   connection = Connection.new(
-                    connection_type: connection_type ? connection_type : "",
+                    connection_type_id: connection_type_id ? connection_type_id : 0,
                     is_operational_status: is_operational_status ? is_operational_status : false,
                     is_fast_charge_capable: is_fast_charge_capable ? is_fast_charge_capable : false,
                     charging_level: charging_level ? charging_level : "unknown",
                     #charging_level_comment: charging_level_comment ? charging_level_comment : "unknown",
-                    current_type: current_type ? current_type : "unknown",
+                    current_type_id: current_type_id ,
                     amps: amps ? amps : 0,
                     voltage: voltage ? voltage : 0,
                     power_kw: power_kw ? power_kw : 0,
@@ -373,9 +381,11 @@ class EvStationsController < ApplicationController
     # end
     
     if @ev_station.update(ev_station_params)
+      #@ev_station.update(amenity_ids: [1,2,3])
+      
       @ev_station.updated_by_id = User.where(uid: request.headers["uid"]).first.id
 
-      render json: @ev_station
+      render json: {station: @ev_station, amenities: @ev_station.amenities}
     else
       render json: @ev_station.errors, status: :unprocessable_entity
     end
@@ -399,7 +409,8 @@ class EvStationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def ev_station_params
-      params.require(:ev_station).permit(:name, :latitude, :longitude, :address_line, :city, :country, :post_code, :uuid, :source, :created_by_id,:updated_by_id, :rating, :user_rating_total, :phone_number, :email, :operator_website_url, :is_membership_required, :is_access_key_required, :is_pay_at_location,:is_free,:parking_type,:open_hours)
-
+      params.require(:ev_station).permit(:name, :latitude, :longitude, :address_line, :city, :country, :post_code, :uuid, :source, :created_by_id,:updated_by_id, :rating, :user_rating_total, :phone_number, :email, :operator_website_url, :is_membership_required, :is_access_key_required, :is_pay_at_location,:is_free,:parking_type,:open_hours,:usage_type_id, amenity_ids:[] )
     end
+
+
 end

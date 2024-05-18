@@ -28,6 +28,8 @@ class Charging < ApplicationRecord
     
 
     
+
+    
     # def login_to_enode
     #     Dotenv.load('.env')
     #     client_id = ENV['ENODE_CLIENT_ID']

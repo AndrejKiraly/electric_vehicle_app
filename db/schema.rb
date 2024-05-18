@@ -10,9 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_10_114745) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_17_100518) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "amenities", id: :serial, force: :cascade do |t|
+    t.string "title"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "amenities_ev_stations", id: false, force: :cascade do |t|
+    t.bigint "ev_station_id", null: false
+    t.bigint "amenity_id", null: false
+    t.index ["amenity_id", "ev_station_id"], name: "index_amenities_ev_stations_on_amenity_id_and_ev_station_id"
+    t.index ["ev_station_id", "amenity_id"], name: "index_amenities_ev_stations_on_ev_station_id_and_amenity_id"
+  end
 
   create_table "chargings", force: :cascade do |t|
     t.bigint "user_id"
@@ -26,10 +39,22 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_114745) do
     t.string "comment", default: ""
     t.datetime "start_time", null: false
     t.datetime "end_time"
+    t.boolean "is_finished", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
     t.index ["connection_id"], name: "index_chargings_on_connection_id"
     t.index ["user_id"], name: "index_chargings_on_user_id"
+  end
+
+  create_table "connection_types", id: :serial, force: :cascade do |t|
+    t.string "formal_name"
+    t.boolean "is_discontinued"
+    t.boolean "is_obsolete"
+    t.string "title"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "connections", force: :cascade do |t|
@@ -41,15 +66,24 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_114745) do
     t.integer "power_kw", default: 0
     t.integer "quantity", default: 0
     t.string "charging_level", default: ""
-    t.string "current_type", default: ""
-    t.string "connection_type", default: ""
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "created_by_id"
     t.bigint "updated_by_id"
+    t.bigint "connection_type_id"
+    t.bigint "current_type_id"
+    t.index ["connection_type_id"], name: "index_connections_on_connection_type_id"
     t.index ["created_by_id"], name: "index_connections_on_created_by_id"
+    t.index ["current_type_id"], name: "index_connections_on_current_type_id"
     t.index ["ev_station_id"], name: "index_connections_on_ev_station_id"
     t.index ["updated_by_id"], name: "index_connections_on_updated_by_id"
+  end
+
+  create_table "current_types", id: :serial, force: :cascade do |t|
+    t.string "description"
+    t.string "title"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "devise_users", force: :cascade do |t|
@@ -84,7 +118,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_114745) do
     t.boolean "is_pay_at_location"
     t.boolean "is_free", default: false
     t.string "open_hours", default: ""
-    t.string "parking_type", default: ""
     t.string "access_type_title", default: ""
     t.string "access_comments", default: ""
     t.string "energy_source", default: ""
@@ -95,8 +128,19 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_114745) do
     t.datetime "updated_at", null: false
     t.bigint "created_by_id"
     t.bigint "updated_by_id"
+    t.bigint "usage_type_id"
     t.index ["created_by_id"], name: "index_ev_stations_on_created_by_id"
     t.index ["updated_by_id"], name: "index_ev_stations_on_updated_by_id"
+    t.index ["usage_type_id"], name: "index_ev_stations_on_usage_type_id"
+  end
+
+  create_table "usage_types", id: :serial, force: :cascade do |t|
+    t.boolean "is_pay_at_location"
+    t.boolean "is_membership_required"
+    t.boolean "is_access_key_required"
+    t.string "title"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|
@@ -127,9 +171,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_114745) do
 
   add_foreign_key "chargings", "connections"
   add_foreign_key "chargings", "users"
+  add_foreign_key "connections", "connection_types"
+  add_foreign_key "connections", "current_types"
   add_foreign_key "connections", "ev_stations"
   add_foreign_key "connections", "users", column: "created_by_id"
   add_foreign_key "connections", "users", column: "updated_by_id"
+  add_foreign_key "ev_stations", "usage_types"
   add_foreign_key "ev_stations", "users", column: "created_by_id"
   add_foreign_key "ev_stations", "users", column: "updated_by_id"
 end

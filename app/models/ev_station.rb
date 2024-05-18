@@ -1,6 +1,9 @@
 class EvStation < ApplicationRecord
     has_many :connections
     has_many :chargings, through: :connections
+    has_and_belongs_to_many :amenities
+    belongs_to :usage_type
+    #accepts_nested_attributes_for :amenities
     EARTH_RADIUS = 6371.0
   
     scope :near, ->  (latitude, longitude, distance) {

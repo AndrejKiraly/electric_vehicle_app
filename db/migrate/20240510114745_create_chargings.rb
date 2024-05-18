@@ -33,6 +33,8 @@ class CreateChargings < ActiveRecord::Migration[7.1]
       # Date and time of charging session end (nullable)
       t.datetime :end_time, null: true
 
+      t.boolean :is_finished, default: false
+
       t.timestamps
     end
   end
