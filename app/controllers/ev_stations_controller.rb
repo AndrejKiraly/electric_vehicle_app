@@ -397,8 +397,11 @@ class EvStationsController < ApplicationController
   end
 
   def destroy_multiple
-    @ev_stations = EvStation.where(country: params[:country])
-
+    if params[:country].present?
+      @ev_stations = EvStation.where(country: params[:country])
+    else
+      @ev_stations = EvStation.all
+    end
     if @ev_stations.destroy_all
       render json: { message: "Stations deleted successfully" }
     else
