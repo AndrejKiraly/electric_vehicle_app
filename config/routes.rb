@@ -3,8 +3,12 @@ Rails.application.routes.draw do
   #devise_for :devise_users
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  
 
 
+  
+
+#SERVER ROUTE https://electric-vehicle-app.onrender.com
   get '/ev_stations', to: 'ev_stations#index'
   get '/ev_stations/:id', to: 'ev_stations#show'
   get '/planroute', to: 'ev_stations#show_polyline'
