@@ -43,11 +43,35 @@ class EvStationsController < ApplicationController
     #ev_stations = EvStation.all.near(latitude, longitude, area)
     ev_stations = EvStation.all.where("latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng)
     ev_stations = ev_stations.where(is_free: params[:is_free]) if params[:is_free].present?
-    ev_stations = ev_stations.where(is_membership_required: params[:is_membership_required]) if params[:is_membership_required].present?
-    ev_stations = ev_stations.where(is_access_key_required: params[:is_access_key_required]) if params[:is_access_key_required].present?
-    ev_stations = ev_stations.where(is_pay_at_location: params[:is_pay_at_location]) if params[:is_pay_at_location].present?
+    ev_stations = ev_stations.where(usage_type_id: params[:usage_type_id]) if params[:usage_type_id].present?
     ev_stations = ev_stations.includes(:connections).where(connections: {is_fast_charge_capable: params[:is_fast_charge_capable]}) if params[:is_fast_charge_capable].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {current_type: params[:current_type]}) if params[:current_type].present?
+    ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
+    ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
+    
+    ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
+    ev_stations = ev_stations.where(
+      id: Connection.select(:ev_station_id)
+                    .where("power_kw > ?", params[:power_kw]))if params[:power_kw].present?
+
+                    
+    #amenity_ids_dam_do_int = params[:amenity_ids].map(&:to_i)
+    if params[:amenity_ids].present?
+      amenity_ids = params[:amenity_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
+      ev_stations = ev_stations.joins(:amenities).where(amenities: { id: amenity_ids }).distinct
+    end
+
+    if params[:usage_type_ids].present?
+      usage_type_ids = params[:usage_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
+      ev_stations = ev_stations.where(usage_type_id: usage_type_ids)
+    end
+
+    if params[:connection_type_ids].present?
+      connection_type_ids = params[:connection_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
+      ev_stations = ev_stations.joins(:connections).where(connections: { connection_type_id: connection_type_ids }).distinct
+    end
+    
+    ev_stations = ev_stations.where("rating >= ?", params[:rating]) if params[:rating].present?
+    ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
     #ev_stations_with_param = ev_stations_with_param.near(latitude, longitude, searching_distance) 
     
     
@@ -424,7 +448,7 @@ class EvStationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def ev_station_params
-      params.require(:ev_station).permit(:name, :latitude, :longitude, :address_line, :city, :country, :post_code, :uuid, :source, :created_by_id,:updated_by_id, :rating, :user_rating_total, :phone_number, :email, :operator_website_url, :is_membership_required, :is_access_key_required, :is_pay_at_location,:is_free,:parking_type,:open_hours,:usage_type_id, amenity_ids:[] )
+      params.require(:ev_station).permit(:name, :latitude, :longitude, :address_line, :city, :country, :post_code, :uuid, :source, :created_by_id,:updated_by_id, :rating, :user_rating_total, :phone_number, :email, :operator_website_url,:is_free,:open_hours,:usage_type_id,usage_type_ids:[], amenity_ids:[],current_type_id:, connection_type_id:, connection_types_id:[] )
     end
 
 

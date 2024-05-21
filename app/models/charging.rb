@@ -2,7 +2,9 @@ class Charging < ApplicationRecord
     include EnodeModule
     has_one :user, class_name: "user", foreign_key: "user_id"
     #has_one :ev_station, class_name: "ev_station", foreign_key: "ev_station_id"
-    has_one :connection, class_name: "Connection", foreign_key: "id"
+    belongs_to :connection
+    after_save :update_ev_station_rating
+    after_destroy :update_ev_station_rating
     
     def self.calculate_charging_time(enode_vehicle_id, connection_id, target_batery_hz)
         enode_access_token = EnodeModule.enode_login
@@ -23,6 +25,10 @@ class Charging < ApplicationRecord
        # puts battery_capacity, battery_level, charge_limit, connection_power, max_current
         return charging_time
 
+    end
+
+    def update_ev_station_rating
+        connection.ev_station.update_rating!
     end
 
     
