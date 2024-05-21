@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_17_100518) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_21_200306) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -134,6 +134,22 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_17_100518) do
     t.index ["usage_type_id"], name: "index_ev_stations_on_usage_type_id"
   end
 
+  create_table "routes", force: :cascade do |t|
+    t.integer "energy_used"
+    t.decimal "latitude_start", precision: 10, scale: 7
+    t.decimal "longitude_start", precision: 10, scale: 7
+    t.decimal "latitude_end", precision: 10, scale: 7
+    t.decimal "longitude_end", precision: 10, scale: 7
+    t.datetime "start_time"
+    t.datetime "end_time"
+    t.boolean "is_finished"
+    t.float "distance"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["user_id"], name: "index_routes_on_user_id"
+  end
+
   create_table "usage_types", id: :serial, force: :cascade do |t|
     t.boolean "is_pay_at_location"
     t.boolean "is_membership_required"
@@ -179,4 +195,5 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_17_100518) do
   add_foreign_key "ev_stations", "usage_types"
   add_foreign_key "ev_stations", "users", column: "created_by_id"
   add_foreign_key "ev_stations", "users", column: "updated_by_id"
+  add_foreign_key "routes", "users"
 end
