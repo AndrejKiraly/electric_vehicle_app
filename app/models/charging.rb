@@ -2,7 +2,7 @@ class Charging < ApplicationRecord
     include EnodeModule
     has_one :user, class_name: "user", foreign_key: "user_id"
     #has_one :ev_station, class_name: "ev_station", foreign_key: "ev_station_id"
-    belongs_to :connection
+    belongs_to :connection, optional: true
     after_save :update_ev_station_rating
     after_destroy :update_ev_station_rating
     
@@ -28,7 +28,9 @@ class Charging < ApplicationRecord
     end
 
     def update_ev_station_rating
-        connection.ev_station.update_rating!
+        if connection && connection.ev_station 
+            connection.ev_station.update_rating!
+        end
     end
 
     

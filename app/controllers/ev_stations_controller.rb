@@ -36,7 +36,7 @@ class EvStationsController < ApplicationController
     
     
     searching_distance = params[:distance].to_i  # Distance in kilometers
-
+    ev_stations = EvStationService.new(params).call
     #ev_stations_with_param = EvStation.filter_by_params_dynamic(params)
 
     #diagonal = (sin((bounds_ne_lat * pi / 180) / 2) * sin((bounds_ne_lat * pi / 180) / 2) + cos(bounds_ne_lat * pi / 180) * cos(bounds_ne_lat * pi / 180) * sin((bounds_ne_lng * pi / 180) / 2) * sin((bounds_ne_lng * pi / 180) / 2))
