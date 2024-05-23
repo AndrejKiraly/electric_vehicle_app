@@ -24,6 +24,8 @@ class EvStationsController < ApplicationController
     bounds_ne_lng = params[:bounds_ne].split(",")[1].to_f
     Rails.logger.info("Bounds: #{bounds_sw_lat}, #{bounds_sw_lng}, #{bounds_ne_lat}, #{bounds_ne_lng}")
 
+    
+
     #InvoiceCreator::TAX_FEE
     #InvoiceCreator.generate
     #isa_access_key_required = params[:isAccessKeyRequired]
@@ -41,37 +43,37 @@ class EvStationsController < ApplicationController
 
     
     #ev_stations = EvStation.all.near(latitude, longitude, area)
-    ev_stations = EvStation.all.where("latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng)
-    ev_stations = ev_stations.where(is_free: params[:is_free]) if params[:is_free].present?
-    ev_stations = ev_stations.where(usage_type_id: params[:usage_type_id]) if params[:usage_type_id].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {is_fast_charge_capable: params[:is_fast_charge_capable]}) if params[:is_fast_charge_capable].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
+    # ev_stations = EvStation.all.where("latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng)
+    # ev_stations = ev_stations.where(is_free: params[:is_free]) if params[:is_free].present?
+    # ev_stations = ev_stations.where(usage_type_id: params[:usage_type_id]) if params[:usage_type_id].present?
+    # ev_stations = ev_stations.includes(:connections).where(connections: {is_fast_charge_capable: params[:is_fast_charge_capable]}) if params[:is_fast_charge_capable].present?
+    # ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
+    # ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
     
-    ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
-    ev_stations = ev_stations.where(
-      id: Connection.select(:ev_station_id)
-                    .where("power_kw > ?", params[:power_kw]))if params[:power_kw].present?
+    # ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
+    # ev_stations = ev_stations.where(
+    #   id: Connection.select(:ev_station_id)
+    #                 .where("power_kw > ?", params[:power_kw]))if params[:power_kw].present?
 
                     
-    #amenity_ids_dam_do_int = params[:amenity_ids].map(&:to_i)
-    if params[:amenity_ids].present?
-      amenity_ids = params[:amenity_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
-      ev_stations = ev_stations.joins(:amenities).where(amenities: { id: amenity_ids }).distinct
-    end
+    # #amenity_ids_dam_do_int = params[:amenity_ids].map(&:to_i)
+    # if params[:amenity_ids].present?
+    #   amenity_ids = params[:amenity_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
+    #   ev_stations = ev_stations.joins(:amenities).where(amenities: { id: amenity_ids }).distinct
+    # end
 
-    if params[:usage_type_ids].present?
-      usage_type_ids = params[:usage_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
-      ev_stations = ev_stations.where(usage_type_id: usage_type_ids)
-    end
+    # if params[:usage_type_ids].present?
+    #   usage_type_ids = params[:usage_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
+    #   ev_stations = ev_stations.where(usage_type_id: usage_type_ids)
+    # end
 
-    if params[:connection_type_ids].present?
-      connection_type_ids = params[:connection_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
-      ev_stations = ev_stations.joins(:connections).where(connections: { connection_type_id: connection_type_ids }).distinct
-    end
+    # if params[:connection_type_ids].present?
+    #   connection_type_ids = params[:connection_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
+    #   ev_stations = ev_stations.joins(:connections).where(connections: { connection_type_id: connection_type_ids }).distinct
+    # end
     
-    ev_stations = ev_stations.where("rating >= ?", params[:rating]) if params[:rating].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
+    # ev_stations = ev_stations.where("rating >= ?", params[:rating]) if params[:rating].present?
+    # ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
     #ev_stations_with_param = ev_stations_with_param.near(latitude, longitude, searching_distance) 
     
     
@@ -94,6 +96,19 @@ class EvStationsController < ApplicationController
     
     #{station: @station, connections: @station.connections.map {|connection| {id: connection.id, chargings: connection.chargings.map {|charging| {id: charging.id, user_id: charging.user_id, vehicle_id: charging.vehicle_id, connection_id: charging.connection_id, battery_level_start: charging.battery_level_start, battery_level_end: charging.battery_level_end, price: charging.price, energy_used: charging.energy_used, rating: charging.rating, comment: charging.comment, start_time: charging.start_time, end_time: charging.end_time}}}}}
 
+  end
+
+  def show_stations_close_to_charging
+    @charging = Charging.find(params[:id])
+    
+    if @charging.latitude == nil || @charging.longitude == nil
+      render json: { error: "Charging has no latitude or longitude" }, status: :unprocessable_entity
+    
+    else
+      @stations = EvStation.near(@charging.latitude, @charging.longitude, 10)
+      render json: @stations, each_serializer: CompactEvStationSerializerSerializer
+    end
+    
   end
 
   def show_polyline
@@ -134,84 +149,16 @@ class EvStationsController < ApplicationController
       if EvStation.is_unique(station_data)
         # Station is unique, proceed with creating the record
         @ev_station = EvStation.new(
-          name: station_data["name"],
-          latitude: station_data["latitude"],
-          longitude: station_data["longitude"],
-          address_line: station_data["address_line"],
-          city: station_data["city"],
-          post_code: station_data["post_code"],
-          country: station_data["country"],
-          source: station_data["source"],
-          phone_number: station_data["phone_number"],
-          email: station_data["email"],
-          operator_website_url: station_data["operator_website_url"],
-          #nedal som acces title
-          access_comments: station_data["access_comments"],
-          is_membership_required: station_data["is_membership_required"],
-          is_access_key_required: station_data["is_access_key_required"],
-          is_pay_at_location: station_data["is_pay_at_location"],
-          limit_time: station_data["limit_time"],
-          instruction_for_user: station_data["instruction_for_user"],
-          energy_source: station_data["energy_source"],
-          #created_by_id: request.headers["uid"],
-          #updated_by_id: request.headers["uid"],
-          created_by_id: User.where(uid: request.headers["uid"]).first.id,
-          updated_by_id: User.where(uid: request.headers["uid"]).first.id,
-          uuid: station_data['source'],
-          usage_type_id: station_data['usage_type_id'],
-          amenity_ids: station_data['amenity_ids']
+          ev_station_creating_params
         )
-
-
-
+        @ev_station.created_by_id = User.where(uid: request.headers["uid"]).first.id
+        @ev_station.updated_by_id = User.where(uid: request.headers["uid"]).first.id
+        @ev_station.amenity_ids = params[:amenity_ids]
         if @ev_station.save
-          if station_data["connections"].present?
-            connections_data = station_data["connections"]
-            connections_data.each_with_index do |connection_data, index|
-              begin
-                connection_type = connection_data["ConnectionType"]
-                is_operational_status = connection_data["IsOperational"]
-                is_fast_charge_capable = connection_data["IsFastChargeCapable"]
-                charging_level = connection_data["ChargingLevel"] || "unknown"
-                charging_level_comment = connection_data["ChargingLevelComment"] || "unknown"
-                current_type = connection_data["CurrentType"] || "unknown"
-                amps = connection_data["Amps"] 
-                voltage = connection_data["Voltage"]
-                power_kw = connection_data["PowerKW"]
-                quantity = connection_data["Quantity"].to_i
-
-                created_by_id = 1
-                updated_by_id = 1
-                # Create a new Connection object for each connection
-                connection = Connection.new(
-                  connection_type: connection_type,
-                  is_operational_status: is_operational_status,
-                  is_fast_charge_capable: is_fast_charge_capable,
-                  charging_level: charging_level,
-                  charging_level_comment: charging_level_comment,
-                  current_type: current_type,
-                  amps: amps,
-                  voltage: voltage,
-                  power_kw: power_kw,
-                  quantity: quantity,
-                  created_by_id: created_by_id,
-                  updated_by_id: updated_by_id
-
-                )
-          
-                # Associate the connection with the station
-                connection.ev_station = @ev_station
-          
-                # Save the connection
-                connection.save
-              rescue => e
-                puts "Error processing connection data: #{e.message}"
-              end
-            end
-          end
           render json: @ev_station, status: :created
         else
-          render json: @ev_station.errors, status: :unprocessable_entity
+          logger.error "EV Station creation failed: #{@ev_station.errors.full_messages}"
+          render json: @ev_station.errors,  status: :unprocessable_entity
         end
       else
         # Station already exists, return an error message
@@ -283,7 +230,7 @@ class EvStationsController < ApplicationController
               longitude: longitude,
               address_line: address_line ? address_line : "",
               city: city ? city : "",
-              country: country ? country : "",
+              country_string: country ? country : "",
               post_code: post_code ? post_code : "",
               uuid: uuid,
               source: source ? source : "",
@@ -421,8 +368,8 @@ class EvStationsController < ApplicationController
   end
 
   def destroy_multiple
-    if params[:country].present?
-      @ev_stations = EvStation.where(country: params[:country])
+    if params[:country_string].present?
+      @ev_stations = EvStation.where(country_string: params[:country])
     else
       @ev_stations = EvStation.all
     end
@@ -448,7 +395,19 @@ class EvStationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def ev_station_params
-      params.require(:ev_station).permit(:name, :latitude, :longitude, :address_line, :city, :country, :post_code, :uuid, :source, :created_by_id,:updated_by_id, :rating, :user_rating_total, :phone_number, :email, :operator_website_url,:is_free,:open_hours,:usage_type_id,usage_type_ids:[], amenity_ids:[],current_type_id:, connection_type_id:, connection_types_id:[] )
+      params.require(:ev_station).permit(:name, :latitude, :longitude, :address_line, :city, :country_string, :post_code, :uuid, :source, :created_by_id,:updated_by_id, :rating, :user_rating_total, :phone_number, :email, :operator_website_url,:is_free,:open_hours,:usage_type_id,usage_type_ids:[], amenity_ids:[],current_type_id:, connection_type_id:, connection_types_id:[], country_id: )
+    end
+
+    def ev_station_creating_params
+      params.require(:ev_station).permit(
+        :name,
+        :latitude,
+        :longitude,
+        :address_line, :city, :country_string, :post_code,
+        :uuid, :source, :created_by_id,:updated_by_id,
+        :rating, :user_rating_total, :phone_number, :email,
+        :operator_website_url,:is_free,:open_hours,:usage_type_id, :amenity_ids, :country_id )
+      
     end
 
 

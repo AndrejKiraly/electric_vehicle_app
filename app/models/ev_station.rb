@@ -3,6 +3,7 @@ class EvStation < ApplicationRecord
     has_many :chargings, through: :connections, dependent: :destroy
     has_and_belongs_to_many :amenities
     belongs_to :usage_type
+    belongs_to :country
     #accepts_nested_attributes_for :amenities
     EARTH_RADIUS = 6371.0
   

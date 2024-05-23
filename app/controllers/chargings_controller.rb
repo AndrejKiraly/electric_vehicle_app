@@ -16,7 +16,8 @@ class ChargingsController < ApplicationController
 
     def index
         #@chargings = Charging.where(user_id: current_user.id, )
-        @chargings = Charging.all.where(user_id: current_user.id)
+        @chargings = Charging.all.where(user_id: User.find_by(uid: request.headers['uid']).id)
+        @chargings = @chargings.where(is_finished: true)
         #Rails.logger.debug("charging_time: #{ChargingLibrary.calculateChargingTime(100, 16, 60, 100, 16)} ")
         render json: @chargings
         #render json: {charging: @chargings, charging_time: @chargings.calculate_charging_time("9cefa962-c2f4-4b43-b636-6632c5cdedc5",1, 50)}

@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  iso_code: MyString
+  continent_code: MyString
+  id: 1
+  title: MyString
+
+two:
+  iso_code: MyString
+  continent_code: MyString
+  id: 1
+  title: MyString

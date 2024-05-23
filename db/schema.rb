@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_21_200306) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_23_112443) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -79,6 +79,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_21_200306) do
     t.index ["updated_by_id"], name: "index_connections_on_updated_by_id"
   end
 
+  create_table "countries", id: :serial, force: :cascade do |t|
+    t.string "iso_code"
+    t.string "continent_code"
+    t.string "title"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "current_types", id: :serial, force: :cascade do |t|
     t.string "description"
     t.string "title"
@@ -104,7 +112,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_21_200306) do
     t.string "name", default: ""
     t.string "address_line", default: ""
     t.string "city", default: ""
-    t.string "country", default: ""
+    t.string "country_string", default: ""
     t.string "post_code", default: ""
     t.string "uuid"
     t.string "source", default: ""
@@ -129,6 +137,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_21_200306) do
     t.bigint "created_by_id"
     t.bigint "updated_by_id"
     t.bigint "usage_type_id"
+    t.bigint "country_id"
+    t.index ["country_id"], name: "index_ev_stations_on_country_id"
     t.index ["created_by_id"], name: "index_ev_stations_on_created_by_id"
     t.index ["updated_by_id"], name: "index_ev_stations_on_updated_by_id"
     t.index ["usage_type_id"], name: "index_ev_stations_on_usage_type_id"
@@ -192,6 +202,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_21_200306) do
   add_foreign_key "connections", "ev_stations"
   add_foreign_key "connections", "users", column: "created_by_id"
   add_foreign_key "connections", "users", column: "updated_by_id"
+  add_foreign_key "ev_stations", "countries"
   add_foreign_key "ev_stations", "usage_types"
   add_foreign_key "ev_stations", "users", column: "created_by_id"
   add_foreign_key "ev_stations", "users", column: "updated_by_id"

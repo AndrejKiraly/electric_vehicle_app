@@ -13,7 +13,8 @@ Rails.application.routes.draw do
   get '/ev_stations/:id', to: 'ev_stations#show'
   get '/planroute', to: 'ev_stations#show_polyline'
   get '/userstations', to: 'ev_stations#show_user_stations'
-  get 'ev_stations/:id/chargings', to: 'ev_stations#show_chargings_for_station'
+  get '/ev_stations/:id/chargings', to: 'ev_stations#show_chargings_for_station'
+  get  '/ev_stations/closetocharging/:id', to: 'ev_stations#show_stations_close_to_charging'
 
   post '/ev_stations', to: 'ev_stations#create'
   post '/ev_stations/multiple', to: 'ev_stations#create_multiple'
