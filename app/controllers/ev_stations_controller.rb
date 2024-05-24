@@ -98,6 +98,13 @@ class EvStationsController < ApplicationController
 
   end
 
+  def show_connections_for_station
+    @station = EvStation.find(params[:id])
+    @connections = @station.connections
+
+    render json: @connections
+  end
+
   def show_stations_close_to_charging
     @charging = Charging.find(params[:id])
     
@@ -106,7 +113,7 @@ class EvStationsController < ApplicationController
     
     else
       @stations = EvStation.near(@charging.latitude, @charging.longitude, 10)
-      render json: @stations, each_serializer: CompactEvStationSerializerSerializer
+      render json: @stations, each_serializer: EvStationSerializer
     end
     
   end
@@ -146,7 +153,7 @@ class EvStationsController < ApplicationController
     # Single station creation logic 
     station_data = JSON.parse(request.body.read)
       # Check if the station is unique using the class method
-      if EvStation.is_unique(station_data)
+      if EvStation.is_unique(station_data["ev_station"])
         # Station is unique, proceed with creating the record
         @ev_station = EvStation.new(
           ev_station_creating_params
@@ -154,6 +161,7 @@ class EvStationsController < ApplicationController
         @ev_station.created_by_id = User.where(uid: request.headers["uid"]).first.id
         @ev_station.updated_by_id = User.where(uid: request.headers["uid"]).first.id
         @ev_station.amenity_ids = params[:amenity_ids]
+        @ev_station.country_id = 1
         if @ev_station.save
           render json: @ev_station, status: :created
         else
@@ -339,22 +347,14 @@ class EvStationsController < ApplicationController
   # PATCH/PUT /ev_stations/1
   
   def update
-    # if params[:connections].present?
-    #   if @ev_station.update(params[:connections])
-    #     @ev_station.connections.each do |connection|
-    #       connections.each do |connection_data|
-    #         if connection.id == connection_data["id"]
-    #           connection.update(connection_data)
-    #         end
-    #       end
-    #     end
-    #   end
-    # end
-    
-    if @ev_station.update(ev_station_params)
+    if @ev_station.update(ev_station_creating_params)
       #@ev_station.update(amenity_ids: [1,2,3])
       
       @ev_station.updated_by_id = User.where(uid: request.headers["uid"]).first.id
+      @ev_station.amenity_ids = params[:amenity_ids]
+      Rails.logger.info("Params before processing: #{params.inspect}") # Log all parameters
+
+      Rails.logger.info("Amenity ids: #{ev_station_creating_params[:amenity_ids]}")
 
       render json: {station: @ev_station, amenities: @ev_station.amenities}
     else
@@ -395,7 +395,16 @@ class EvStationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def ev_station_params
-      params.require(:ev_station).permit(:name, :latitude, :longitude, :address_line, :city, :country_string, :post_code, :uuid, :source, :created_by_id,:updated_by_id, :rating, :user_rating_total, :phone_number, :email, :operator_website_url,:is_free,:open_hours,:usage_type_id,usage_type_ids:[], amenity_ids:[],current_type_id:, connection_type_id:, connection_types_id:[], country_id: )
+      params.require(:ev_station).permit(:name, :latitude, :longitude,
+       :address_line, :city, :country_string,
+        :post_code, :uuid, :source, :created_by_id,
+        :updated_by_id, :rating, :user_rating_total,
+         :phone_number, :email, :operator_website_url,
+         :is_free,:open_hours,:usage_type_id,:usage_type_ids[],
+          :amenity_ids,
+          :current_type_id,
+           :connection_type_id,
+           :connection_types_id[], :country_id )
     end
 
     def ev_station_creating_params
@@ -406,7 +415,9 @@ class EvStationsController < ApplicationController
         :address_line, :city, :country_string, :post_code,
         :uuid, :source, :created_by_id,:updated_by_id,
         :rating, :user_rating_total, :phone_number, :email,
-        :operator_website_url,:is_free,:open_hours,:usage_type_id, :amenity_ids, :country_id )
+        :operator_website_url,:is_free,:open_hours, :usage_type_id, 
+        :country_id,amenity_ids: []
+        )
       
     end
 

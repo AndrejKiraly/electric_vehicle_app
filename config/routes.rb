@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   get '/planroute', to: 'ev_stations#show_polyline'
   get '/userstations', to: 'ev_stations#show_user_stations'
   get '/ev_stations/:id/chargings', to: 'ev_stations#show_chargings_for_station'
+  get '/ev_stations/:id/connections', to: 'ev_stations#show_connections_for_station'
   get  '/ev_stations/closetocharging/:id', to: 'ev_stations#show_stations_close_to_charging'
 
   post '/ev_stations', to: 'ev_stations#create'
