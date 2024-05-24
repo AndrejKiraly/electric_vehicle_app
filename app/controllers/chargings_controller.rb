@@ -30,9 +30,19 @@ class ChargingsController < ApplicationController
 
     end
 
+    def monthly_summary
+        @month = params[:month].to_i  # Get the month from the request parameters (ensure it's an integer)
+        @year = params[:year].to_i    # Get the year from the request parameters (ensure it's an integer)
+        @user = User.find_by(uid: request.headers['uid'])
+        @chargings = Charging.for_month(@month, @year)
+        render json: @chargings
+    end
+
     def show
-        @charging = Charging.find(params[:id])
-        render json: @charging
+        if params[:id] != "monthly_summary"
+            @charging = Charging.find(params[:id])
+            render json: @charging
+        end
     end
 
     def create
@@ -69,7 +79,11 @@ class ChargingsController < ApplicationController
 
     private 
     def charging_params
-        params.require(:charging).permit(:user_id, :vehicle_id, :connection_id, :battery_level_start, :battery_level_end, :price, :energy_used, :rating, :comment, :start_time, :end_time, :is_finished, :latitude, :longitude)
+        params.require(:charging).permit(:user_id, :vehicle_id, :connection_id, :battery_level_start,
+         :battery_level_end, :price, :energy_used,
+          :rating, :comment, :start_time, :end_time,
+           :is_finished, :latitude, :longitude,
+           :month, :year)
 
     end
 

@@ -45,9 +45,11 @@ Rails.application.routes.draw do
   get '/chargings', to: 'chargings#index'
   get'/chargingsall', to: 'chargings#show_all'
   get '/chargings/:id', to: 'chargings#show'
+  get '/chargings/monthly_summary', to: 'chargings#monthly_summary'
   post '/chargings', to: 'chargings#create'
   patch '/chargings/:id', to: 'chargings#update'
   delete '/chargings/:id', to: 'chargings#destroy'
+
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

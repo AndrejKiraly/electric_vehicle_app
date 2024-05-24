@@ -35,6 +35,10 @@ class Charging < ApplicationRecord
         end
     end
 
+    scope :for_month, ->(month, year) {
+        where(start_time: Time.zone.parse("#{year}-#{month}-01")..Time.zone.parse("#{year}-#{month}-#{Date.days_in_month(year, month)})"))
+    }
+
     
 
     
