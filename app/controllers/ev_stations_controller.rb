@@ -356,7 +356,7 @@ class EvStationsController < ApplicationController
 
       Rails.logger.info("Amenity ids: #{ev_station_creating_params[:amenity_ids]}")
 
-      render json: {station: @ev_station, amenities: @ev_station.amenities}
+      render json: @ev_station, each_serializer: EvStationSerializer
     else
       render json: @ev_station.errors, status: :unprocessable_entity
     end
