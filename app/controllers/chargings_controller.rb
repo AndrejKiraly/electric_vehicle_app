@@ -31,7 +31,8 @@ class ChargingsController < ApplicationController
 
     def create
         current_user_id = User.find_by(uid: request.headers['uid']).id
-        @charging = ChargingCreator.new(adjust_params(params.merge(user_id: current_user_id))).create
+        @charging = Charging.new(adjust_params(params))
+        #@charging = ChargingCreator.new(adjust_params(params.merge(user_id: current_user_id))).create
 
         if @charging.save
             render json: @charging, status: :created
