@@ -92,7 +92,7 @@ class EvStationsController < ApplicationController
     @station = EvStation.find(params[:id])
     @chargings = @station.chargings
 
-    render json:  @chargings
+    render json: @chargings
     
     #{station: @station, connections: @station.connections.map {|connection| {id: connection.id, chargings: connection.chargings.map {|charging| {id: charging.id, user_id: charging.user_id, vehicle_id: charging.vehicle_id, connection_id: charging.connection_id, battery_level_start: charging.battery_level_start, battery_level_end: charging.battery_level_end, price: charging.price, energy_used: charging.energy_used, rating: charging.rating, comment: charging.comment, start_time: charging.start_time, end_time: charging.end_time}}}}}
 
