@@ -34,8 +34,8 @@ class WebhooksController < ApplicationController
         if power_delivery_state == 'PLUGGED_IN:CHARGING'
           # Create a charging record
           Charging.create(
-            vehicle_id:,
-            user_id:,
+            vehicle_id:vehicle['id'],
+            user_id:user_id,
             battery_level_start: charge_state['batteryLevel'],
             start_time: Time.current,
             latitude: vehicle['location']['latitude'],

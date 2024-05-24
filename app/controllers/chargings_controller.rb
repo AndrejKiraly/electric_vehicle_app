@@ -24,6 +24,12 @@ class ChargingsController < ApplicationController
     
     end
 
+    def show_all
+        @chargings = Charging.all
+        render json: @chargings
+
+    end
+
     def show
         @charging = Charging.find(params[:id])
         render json: @charging

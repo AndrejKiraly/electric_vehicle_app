@@ -43,6 +43,7 @@ Rails.application.routes.draw do
 
 
   get '/chargings', to: 'chargings#index'
+  get'/chargingsall', to: 'chargings#show_all'
   get '/chargings/:id', to: 'chargings#show'
   post '/chargings', to: 'chargings#create'
   patch '/chargings/:id', to: 'chargings#update'
