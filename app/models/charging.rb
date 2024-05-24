@@ -5,6 +5,8 @@ class Charging < ApplicationRecord
     belongs_to :connection, optional: true
     after_save :update_ev_station_rating
     after_destroy :update_ev_station_rating
+    belongs_to :user
+    validates :user_id, presence: true  # Enforce presence of user_id
     
     def self.calculate_charging_time(enode_vehicle_id, connection_id, target_batery_hz)
         enode_access_token = EnodeModule.enode_login
