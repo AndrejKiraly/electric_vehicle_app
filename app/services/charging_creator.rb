@@ -7,8 +7,8 @@ class ChargingCreator
     def create
       set_lat_lng
       
-      Charging.new(@params)
-      Charging.user_id = User.where(uid: request.headers["uid"]).first.id
+      charging = Charging.new(@params)
+      charging.user_id = User.where(uid: request.headers["uid"]).first.id
 
     end
   
