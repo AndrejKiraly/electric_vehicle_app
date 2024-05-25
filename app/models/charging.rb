@@ -29,6 +29,21 @@ class Charging < ApplicationRecord
 
     end
 
+    def self.monthly_summary(month, year)
+        chargings = Charging.all.for_month(month, year)
+        chargings = chargings.where(is_finished: true)
+        total_charging_cost = chargings.sum(:price) 
+        total_energy_used = chargings.sum(:energy_used)
+        
+
+        summary_data = {
+            total_charging_cost: total_charging_cost,
+            total_energy_used: total_energy_used,
+            chargings: chargings
+        }
+        return summary_data
+    end
+
     def update_ev_station_rating
         if connection && connection.ev_station 
             connection.ev_station.update_rating!
@@ -36,7 +51,9 @@ class Charging < ApplicationRecord
     end
 
     scope :for_month, ->(month, year) {
-        where(start_time: Time.zone.parse("#{year}-#{month}-01")..Time.zone.parse("#{year}-#{month}-#{Date.days_in_month(year, month)})"))
+        start_date = Date.new(year, month, 1).beginning_of_day # Use Date for flexibility
+        end_date = start_date.end_of_month.end_of_day         # Explicitly end of day
+        where(start_time: start_date..end_date)
     }
 
     

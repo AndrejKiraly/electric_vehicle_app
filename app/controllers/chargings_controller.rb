@@ -34,8 +34,19 @@ class ChargingsController < ApplicationController
         @month = params[:month].to_i  # Get the month from the request parameters (ensure it's an integer)
         @year = params[:year].to_i    # Get the year from the request parameters (ensure it's an integer)
         @user = User.find_by(uid: request.headers['uid'])
-        @chargings = Charging.for_month(@month, @year)
-        render json: @chargings
+        # @chargings = Charging.all.for_month(@month, @year)  
+        # total_charging_price = @chargings.sum(:price) # Define these variables here
+        # total_energy_used = @chargings.sum(:energy_used)
+        
+        # summary_data = {
+        #     total_charging_price: total_charging_price,
+        #     total_energy_used: total_energy_used,
+        #     chargings: @chargings
+        # }
+
+        @chargingMonthlySummary = Charging.monthly_summary(@month, @year)
+        
+        render json: MonthChargingSummarySerializer.new(@chargingMonthlySummary).serializable_hash
     end
 
     def show

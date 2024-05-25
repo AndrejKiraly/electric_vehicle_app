@@ -45,7 +45,7 @@ Rails.application.routes.draw do
   get '/chargings', to: 'chargings#index'
   get'/chargingsall', to: 'chargings#show_all'
   get '/chargings/:id', to: 'chargings#show'
-  get '/chargings/monthly_summary', to: 'chargings#monthly_summary'
+  get '/chargings/monthly/:year/:month', to: 'chargings#monthly_summary'
   post '/chargings', to: 'chargings#create'
   patch '/chargings/:id', to: 'chargings#update'
   delete '/chargings/:id', to: 'chargings#destroy'
