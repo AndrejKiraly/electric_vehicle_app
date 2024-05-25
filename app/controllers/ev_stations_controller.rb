@@ -4,6 +4,7 @@ class EvStationsController < ApplicationController
   before_action :set_ev_station, only: %i[ show update destroy ]
   #before_action :authenticate_user!, except: [:index, :show, :show_polyline]
   before_action :set_user, only: %i[ show_user_stations create_multiple create update destroy]
+  require "fast_polylines"
 
   # GET /ev_stations
   def show_user_stations
@@ -56,7 +57,7 @@ class EvStationsController < ApplicationController
                     .where("power_kw > ?", params[:power_kw]))if params[:power_kw].present?
 
                     
-    #amenity_ids_dam_do_int = params[:amenity_ids].map(&:to_i)
+    
     if params[:amenity_ids].present?
       amenity_ids = params[:amenity_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
       ev_stations = ev_stations.joins(:amenities).where(amenities: { id: amenity_ids }).distinct
@@ -139,7 +140,7 @@ class EvStationsController < ApplicationController
       
       
       
-      render json: unique_stations.map { |station| station.as_json(include_distance: true, distance: station.distance(latitude, longitude)) }
+      render json: unique_stations , each_with_index: CompactEvStationSerializerSerializer
     else
       render json: { error: "Invalid parameters" }
       
