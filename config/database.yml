@@ -81,6 +81,7 @@ test:
 #
 production:
   <<: *default
+  adapter: postgis
   host: <%= ENV['DATABASE_URL'] %>
   username: <%= ENV['Username'] %>
   password: <%= ENV['Password'] %>
