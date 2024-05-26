@@ -23,7 +23,7 @@ default: &default
 
 development:
   <<: *default
-  adapter: postgis
+  adapter: <%= ENV['ADAPTER'] %>
   database: electric_vehicle_app_development
 
   # The specified database role being used to connect to PostgreSQL.
@@ -82,7 +82,7 @@ test:
 #
 production:
   <<: *default
-  adapter: postgis
+  adapter: <%= ENV['ADAPTER'] %>
   host: <%= ENV['DATABASE_URL'] %>
   username: <%= ENV['Username'] %>
   password: <%= ENV['Password'] %>
