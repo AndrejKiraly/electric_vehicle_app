@@ -2,7 +2,7 @@ class EvStationsController < ApplicationController
 
     #include InvoiceCreator
   before_action :set_ev_station, only: %i[ show update destroy ]
-  before_action :authenticate_user!, except: [:index, :show, :create_multiple, :show_polyline]
+  #before_action :authenticate_user!, except: [:index, :show, :create_multiple, :show_polyline]
   before_action :set_user, only: %i[ show_user_stations create update destroy]
   require "fast_polylines"
 

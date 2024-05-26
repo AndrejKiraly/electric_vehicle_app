@@ -1,7 +1,8 @@
 class EvStation < ApplicationRecord
     has_many :connections, dependent: :destroy
     has_many :chargings, through: :connections, dependent: :destroy
-    has_and_belongs_to_many :amenities
+    has_and_belongs_to_many :amenities, dependent: :destroy
+   
     belongs_to :usage_type
     belongs_to :country, optional: true
 
