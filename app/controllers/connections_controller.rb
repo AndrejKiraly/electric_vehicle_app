@@ -1,6 +1,7 @@
 class ConnectionsController < ApplicationController
 
     before_action :set_connection, only: [:show, :update, :destroy]
+    before_action :authenticate_user!, only: [:create, :update, :destroy]
 
     def index
         render json: Connection.all
@@ -29,8 +30,8 @@ class ConnectionsController < ApplicationController
     def create
         @connection = Connection.new(connection_params)
         #connection_params[:created_by_id] = current
-        @connection.created_by_id = User.where(uid: request.headers['uid']).first.id
-        @connection.updated_by_id = User.where(uid: request.headers['uid']).first.id
+        @connection.created_by_id = current_user.id
+        @connection.updated_by_id = current_user.id
         if @connection.save
             render json: @connection, status: :created
         else

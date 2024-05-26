@@ -2,7 +2,7 @@
 
 class ChargingsController < ApplicationController
     
-    #before_action :authenticate_user!
+    before_action :authenticate_user!
     
     
     
@@ -57,21 +57,28 @@ class ChargingsController < ApplicationController
     end
 
     def create
-        current_user_id = User.find_by(uid: request.headers['uid']).id
-        @charging = ChargingCreator.new(adjust_params(params)).create
-        @charging.user_id = current_user_id
-        #@charging = ChargingCreator.new(adjust_params(params.merge(user_id: current_user_id))).create
-
-        if @charging.save
-            render json: @charging, status: :created
+        @charging = Charging.createCharging(charging_params, current_user.id)
+        if @charging != nil
+            if @charging.save
+                render json: @charging, status: :created
+            else
+                render json: @charging.errors, status: :unprocessable_entity
+            end
         else
-            render json: @charging.errors, status: :unprocessable_entity
+            render json: { error: "Invalid charging object" }, status: :unprocessable_entity
         end
     end
 
     def update
         @charging = Charging.find(params[:id])
+        latitude = params[:latitude]
+        longitude = params[:longitude]
+        if Connection.find_by(id: params[:connection_id]).nil?
+            render json: { error: "Connection not found" }, status: :unprocessable_entity
+            return
+        end
         if @charging.update(charging_params)
+            @charging.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
             render json: @charging
         else
             render json: @charging.errors, status: :unprocessable_entity
@@ -90,18 +97,18 @@ class ChargingsController < ApplicationController
 
     private 
     def charging_params
-        params.require(:charging).permit(:user_id, :vehicle_id, :connection_id, :battery_level_start,
+        params.require(:charging).permit(:vehicle_id, :connection_id, :battery_level_start,
          :battery_level_end, :price, :energy_used,
           :rating, :comment, :start_time, :end_time,
-           :is_finished, :latitude, :longitude,
-           :month, :year)
+           :is_finished, :latitude, :longitude)
 
     end
 
     def adjust_params(params)
         params[:charging] ||= params
-        params.require(:charging).permit(:user_id, :vehicle_id, :connection_id, :battery_level_start, :battery_level_end, :price, :energy_used, :rating, :comment, :start_time, :end_time, :is_finished, :latitude, :longitude)
-
+        params.require(:charging).permit( :vehicle_id, :connection_id,
+         :battery_level_start, :battery_level_end, :price, :energy_used, :rating,
+          :comment, :start_time, :end_time, :is_finished, :latitude, :longitude)
     end
 
 

@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_23_112443) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_26_081200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+  enable_extension "postgis"
 
   create_table "amenities", id: :serial, force: :cascade do |t|
     t.string "title"
@@ -42,8 +43,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_23_112443) do
     t.boolean "is_finished", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.decimal "latitude", precision: 10, scale: 7
-    t.decimal "longitude", precision: 10, scale: 7
+    t.geography "coordinates", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.index ["connection_id"], name: "index_chargings_on_connection_id"
     t.index ["user_id"], name: "index_chargings_on_user_id"
   end
@@ -107,8 +107,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_23_112443) do
   end
 
   create_table "ev_stations", force: :cascade do |t|
-    t.decimal "latitude", precision: 10, scale: 7
-    t.decimal "longitude", precision: 10, scale: 7
     t.string "name", default: ""
     t.string "address_line", default: ""
     t.string "city", default: ""
@@ -138,6 +136,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_23_112443) do
     t.bigint "updated_by_id"
     t.bigint "usage_type_id"
     t.bigint "country_id"
+    t.geography "coordinates", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.index ["country_id"], name: "index_ev_stations_on_country_id"
     t.index ["created_by_id"], name: "index_ev_stations_on_created_by_id"
     t.index ["updated_by_id"], name: "index_ev_stations_on_updated_by_id"

@@ -7,6 +7,8 @@ class Charging < ApplicationRecord
     after_destroy :update_ev_station_rating
     belongs_to :user
     validates :user_id, presence: true  # Enforce presence of user_id
+
+    attr_accessor :latitude, :longitude  # Add these attributes
     
     def self.calculate_charging_time(enode_vehicle_id, connection_id, target_batery_hz)
         enode_access_token = EnodeModule.enode_login
@@ -49,6 +51,32 @@ class Charging < ApplicationRecord
             connection.ev_station.update_rating!
         end
     end
+
+    def self.createCharging(params, current_user_id)
+        if params[:connection_id].present?
+            connection = Connection.find_by(id: params[:connection_id])
+            if connection.nil?
+                return nil
+            else
+                #set coordinates from given connections ev_station
+                ev_station = EvStation.find(Connection.find(params[:connection_id]).ev_station_id)
+                params[:latitude] = ev_station.coordinates.y
+                params[:longitude] = ev_station.coordinates.x
+            end
+        end
+        @charging = Charging.new(params)
+        longitude = params[:longitude]
+        latitude = params[:latitude]
+        @charging.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
+        @charging.user_id = current_user_id
+        return @charging
+
+
+        
+    end
+
+
+
 
     scope :for_month, ->(month, year) {
         start_date = Date.new(year, month, 1).beginning_of_day # Use Date for flexibility

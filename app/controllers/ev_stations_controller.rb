@@ -2,8 +2,8 @@ class EvStationsController < ApplicationController
 
     #include InvoiceCreator
   before_action :set_ev_station, only: %i[ show update destroy ]
-  #before_action :authenticate_user!, except: [:index, :show, :show_polyline]
-  before_action :set_user, only: %i[ show_user_stations create_multiple create update destroy]
+  before_action :authenticate_user!, except: [:index, :show, :create_multiple, :show_polyline]
+  before_action :set_user, only: %i[ show_user_stations create update destroy]
   require "fast_polylines"
 
   # GET /ev_stations
@@ -17,6 +17,10 @@ class EvStationsController < ApplicationController
   end
 
   def index
+    #ev_stations = EvStationService.new(params).call
+    #ev_stations_with_param = EvStation.filter_by_params_dynamic(params)
+    #InvoiceCreator::TAX_FEE
+    #InvoiceCreator.generate
     latitude = params[:lat].to_f
     longitude = params[:lng].to_f
     bounds_sw_lat = params[:bounds_sw].split(",")[0].to_f
@@ -24,60 +28,8 @@ class EvStationsController < ApplicationController
     bounds_ne_lat = params[:bounds_ne].split(",")[0].to_f
     bounds_ne_lng = params[:bounds_ne].split(",")[1].to_f
     Rails.logger.info("Bounds: #{bounds_sw_lat}, #{bounds_sw_lng}, #{bounds_ne_lat}, #{bounds_ne_lng}")
-
-    
-
-    #InvoiceCreator::TAX_FEE
-    #InvoiceCreator.generate
-    #isa_access_key_required = params[:isAccessKeyRequired]
-    #is_membership_required = params[:isMembershipRequired]
-    #is_pay_at_location = params[:isPayAtLocation]
-    #is_fast_charge_capable = params[:isFastChargeCapable]
-    #charging_level = params[:charging_level]
-    
-    
-    searching_distance = params[:distance].to_i  # Distance in kilometers
-    ev_stations = EvStationService.new(params).call
-    #ev_stations_with_param = EvStation.filter_by_params_dynamic(params)
-
-    #diagonal = (sin((bounds_ne_lat * pi / 180) / 2) * sin((bounds_ne_lat * pi / 180) / 2) + cos(bounds_ne_lat * pi / 180) * cos(bounds_ne_lat * pi / 180) * sin((bounds_ne_lng * pi / 180) / 2) * sin((bounds_ne_lng * pi / 180) / 2))
-
-    
-    #ev_stations = EvStation.all.near(latitude, longitude, area)
-    ev_stations = EvStation.all.where("latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", bounds_sw_lat, bounds_ne_lat, bounds_sw_lng, bounds_ne_lng)
-    ev_stations = ev_stations.where(is_free: params[:is_free]) if params[:is_free].present?
-    ev_stations = ev_stations.where(usage_type_id: params[:usage_type_id]) if params[:usage_type_id].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {is_fast_charge_capable: params[:is_fast_charge_capable]}) if params[:is_fast_charge_capable].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
-    
-    ev_stations = ev_stations.includes(:connections).where(connections: {current_type_id: params[:current_type_id]}) if params[:current_type_id].present?
-    ev_stations = ev_stations.where(
-      id: Connection.select(:ev_station_id)
-                    .where("power_kw > ?", params[:power_kw]))if params[:power_kw].present?
-
-                    
-    
-    if params[:amenity_ids].present?
-      amenity_ids = params[:amenity_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
-      ev_stations = ev_stations.joins(:amenities).where(amenities: { id: amenity_ids }).distinct
-    end
-
-    if params[:usage_type_ids].present?
-      usage_type_ids = params[:usage_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
-      ev_stations = ev_stations.where(usage_type_id: usage_type_ids)
-    end
-
-    if params[:connection_type_ids].present?
-      connection_type_ids = params[:connection_type_ids].split(',').map(&:to_i)  # Ensure amenity_ids is an array of integers
-      ev_stations = ev_stations.joins(:connections).where(connections: { connection_type_id: connection_type_ids }).distinct
-    end
-    
-    ev_stations = ev_stations.where("rating >= ?", params[:rating]) if params[:rating].present?
-    ev_stations = ev_stations.includes(:connections).where(connections: {connection_type_id: params[:connection_type_id]}) if params[:connection_type_id].present?
-    #ev_stations_with_param = ev_stations_with_param.near(latitude, longitude, searching_distance) 
-    
-    
+    ev_stations = EvStation.filter_stations(params)
+        
     render json: ev_stations, each_serializer: CompactEvStationSerializerSerializer
   
 
@@ -85,15 +37,14 @@ class EvStationsController < ApplicationController
 
   # GET /ev_stations/1
   def show
-    render json: @ev_station
+    render json: @ev_station, each_serializer: EvStationSerializer
   end
 
   def show_chargings_for_station
-    #Charging.find(1).connection.ev_station.id
     @station = EvStation.find(params[:id])
     @chargings = @station.chargings
 
-    render json: @chargings
+    render json: @chargings, each_serializer: ChargingSerializer
     
     #{station: @station, connections: @station.connections.map {|connection| {id: connection.id, chargings: connection.chargings.map {|charging| {id: charging.id, user_id: charging.user_id, vehicle_id: charging.vehicle_id, connection_id: charging.connection_id, battery_level_start: charging.battery_level_start, battery_level_end: charging.battery_level_end, price: charging.price, energy_used: charging.energy_used, rating: charging.rating, comment: charging.comment, start_time: charging.start_time, end_time: charging.end_time}}}}}
 
@@ -113,7 +64,9 @@ class EvStationsController < ApplicationController
       render json: { error: "Charging has no latitude or longitude" }, status: :unprocessable_entity
     
     else
+      #TODO PREROBIT DO POSTGIS
       @stations = EvStation.near(@charging.latitude, @charging.longitude, 10)
+
       render json: @stations, each_serializer: EvStationSerializer
     end
     
@@ -152,33 +105,21 @@ class EvStationsController < ApplicationController
   # POST /ev_stations
   def create    
     # Single station creation logic 
-    station_data = JSON.parse(request.body.read)
+    
       # Check if the station is unique using the class method
-      if EvStation.is_unique(station_data["ev_station"])
-        # Station is unique, proceed with creating the record
-        @ev_station = EvStation.new(
-          ev_station_creating_params
-        )
-        @ev_station.created_by_id = User.where(uid: request.headers["uid"]).first.id
-        @ev_station.updated_by_id = User.where(uid: request.headers["uid"]).first.id
-        @ev_station.amenity_ids = params[:amenity_ids]
-        @ev_station.country_id = 1
-        if @ev_station.save
-          render json: @ev_station, status: :created
-        else
-          logger.error "EV Station creation failed: #{@ev_station.errors.full_messages}"
-          render json: @ev_station.errors,  status: :unprocessable_entity
-        end
+      Rails.logger.info("Params before processing: #{current_user.id}") # Log all parameters
+      @ev_station = EvStation.createStation(ev_station_creating_params, current_user.id)
+      if @ev_station.save
+        render json: @ev_station, status: :created
       else
-        # Station already exists, return an error message
-        render json: { message: " Station already exists" }, status: :unprocessable_entity
+        render json: @ev_station.errors, status: :unprocessable_entity
       end
+
   end
 
 
     def create_multiple
       if (request.headers['multipleStations'].present? && request.headers['latitude'].present? && request.headers['longitude'].present?)
-        Dotenv.load('.env')
         apikey= ENV['openChargeMapApiKey']
         latitude = request.headers['latitude'] 
         longitude = request.headers['longitude']
@@ -194,9 +135,10 @@ class EvStationsController < ApplicationController
         stations = []
     
         stations_data.each do |station_data|
-          puts station_data.length
-          if EvStation.is_unique(station_data) && station_data.present?
-            puts"creating new station"
+          country_id = station_data["AddressInfo"]["Country"]["ID"]
+          uuid = station_data["UUID"]
+          source = 
+          if EvStation.is_unique(uuid, country_id, "openchargemap api") && station_data.present?
             if station_data["AddressInfo"].present?
               name = station_data["AddressInfo"]["Title"]
               latitude = station_data["AddressInfo"]["Latitude"]
@@ -204,9 +146,11 @@ class EvStationsController < ApplicationController
               address_line = station_data["AddressInfo"]["AddressLine1"]
               city = station_data["AddressInfo"]["Town"]
               country = station_data["AddressInfo"]["Country"]["Title"]
+              country_id = station_data["AddressInfo"]["Country"]["ID"]
               post_code = station_data["AddressInfo"]["Postcode"]
               phone_number = station_data["AddressInfo"]["ContactTelephone1"] || "unknown"
               email = station_data["AddressInfo"]["ContactEmail"] || "unknown"
+              coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
             end
             uuid = station_data["UUID"]
             if station_data["DataProvider"].present?
@@ -235,8 +179,6 @@ class EvStationsController < ApplicationController
             # Create a new station object with the extracted data
             @ev_station = EvStation.new(
               name: name,
-              latitude: latitude,
-              longitude: longitude,
               address_line: address_line ? address_line : "",
               city: city ? city : "",
               country_string: country ? country : "",
@@ -254,6 +196,8 @@ class EvStationsController < ApplicationController
               limit_time: limit_time ? limit_time : "",
               instruction_for_user: instruction_for_user ? instruction_for_user : "",
               energy_source: energy_source ? energy_source : "",
+              coordinates: coordinates,
+              country_id: country_id
               
               
 
@@ -333,7 +277,7 @@ class EvStationsController < ApplicationController
         end
     
         if stations.any?
-          render json: stations, status: :created
+            render json: { count: stations.length, status: :created }
         else
           render json: { message: "No stations were created" }, status: :unprocessable_entity
         end
@@ -351,10 +295,12 @@ class EvStationsController < ApplicationController
     if @ev_station.update(ev_station_creating_params)
       #@ev_station.update(amenity_ids: [1,2,3])
       
-      @ev_station.updated_by_id = User.where(uid: request.headers["uid"]).first.id
+      @ev_station.updated_by_id = current_user.id
       @ev_station.amenity_ids = params[:amenity_ids]
-      Rails.logger.info("Params before processing: #{params.inspect}") # Log all parameters
-
+      latitude = params[:latitude]
+      longitude = params[:longitude]
+      @ev_station.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
+      
       Rails.logger.info("Amenity ids: #{ev_station_creating_params[:amenity_ids]}")
 
       render json: @ev_station, each_serializer: EvStationSerializer
@@ -410,14 +356,12 @@ class EvStationsController < ApplicationController
 
     def ev_station_creating_params
       params.require(:ev_station).permit(
-        :name,
-        :latitude,
-        :longitude,
+        :name, :latitude, :longitude,
         :address_line, :city, :country_string, :post_code,
         :uuid, :source, :created_by_id,:updated_by_id,
         :rating, :user_rating_total, :phone_number, :email,
         :operator_website_url,:is_free,:open_hours, :usage_type_id, 
-        :country_id,amenity_ids: []
+        :country_id,amenity_ids: [],
         )
       
     end
