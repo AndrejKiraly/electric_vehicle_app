@@ -87,7 +87,7 @@ class EvStationsController < ApplicationController
 
   # POST /ev_stations
   def create
-      @ev_station = EvStation.createStation(ev_station_creating_params, current_user.id)
+      @ev_station = EvStation.createStation(ev_station_creating_params, 1)
       if @ev_station.save
         render json: @ev_station, status: :created
       else
@@ -186,8 +186,8 @@ class EvStationsController < ApplicationController
         :address_line, :city, :country_string, :post_code,
         :uuid, :source, :created_by_id,:updated_by_id,
         :rating, :user_rating_total, :phone_number, :email,
-        :operator_website_url,:is_free,:open_hours, :usage_type_id, :source_id,
-        :country_id,amenity_ids: [], )
+        :operator_website_url,:is_free,:open_hours, :usage_type_id, :source_id, 
+        :country_id,amenity_ids: [],connection_types_ids:[] )
       
     end
 

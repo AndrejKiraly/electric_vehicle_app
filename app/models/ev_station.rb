@@ -18,6 +18,7 @@ class EvStation < ApplicationRecord
     scope :current_type,     ->(id)    { joins(:connections).where(connections: { current_type_id: id }) if id.present? }
     scope :connection_type,  ->(id)    { joins(:connections).where(connections: { connection_type_id: id }) if id.present? }
     scope :min_power,        ->(kw)    { joins(:connections).where("connections.power_kw > ?", kw) if kw.present? }
+    
     scope :amenities,        ->(ids)   { joins(:amenities).where(amenities: { id: ids }) if ids.present? }
     scope :usage_types,      ->(ids)   { where(usage_type_id: ids) if ids.present? }
     scope :connection_types, ->(ids)   { joins(:connections).where(connections: { connection_type_id: ids }) if ids.present? }
@@ -39,13 +40,22 @@ class EvStation < ApplicationRecord
       ev_stations = EvStation.all.within_coords(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng)
       ev_stations = ev_stations.is_free(params[:is_free]) 
       ev_stations = ev_stations.fast_charge(params[:is_fast_charge_capable]) 
-      ev_stations = ev_stations.current_type(params[:current_type_id]) 
-      ev_stations = ev_stations.connection_type(params[:connection_type_id]) 
-      ev_stations = ev_stations.min_power(params[:power_kw])
-      ev_stations = ev_stations.amenities(params[:amenity_ids]) 
-      ev_stations = ev_stations.usage_types(params[:usage_type_ids]) 
-      ev_stations = ev_stations.connection_types(params[:connection_type_ids])
+      ev_stations = ev_stations.current_type(params[:current_type_id])
+
+      if params[:connection_type_ids].present?
+      ev_stations = ev_stations.connection_type(params[:connection_type_ids].split(',').map(&:to_i))
+      end
+      ev_stations = ev_stations.min_power(params[:power_kw]) 
+
+      if params[:amenity_ids].present?
+      ev_stations = ev_stations.amenities(params[:amenity_ids].split(',').map(&:to_i)) 
+      end
+      if params[:usage_type_ids].present?
+      ev_stations = ev_stations.usage_types(params[:usage_type_ids].split(',').map(&:to_i)) 
+      end
+
       ev_stations = ev_stations.rating(params[:rating]) 
+      
     }
   
     def self.is_unique(uuid, country_id, source_id)
