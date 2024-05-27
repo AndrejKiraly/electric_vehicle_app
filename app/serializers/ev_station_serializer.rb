@@ -15,7 +15,7 @@ class EvStationSerializer < ActiveModel::Serializer
   attribute :longitude do
     object.coordinates.x
   end
-
+  
     belongs_to :source, serializer: SourceSerializer
     belongs_to :country, serializer: CountrySerializer
     belongs_to :usage_type, serializer: UsageTypeSerializer
