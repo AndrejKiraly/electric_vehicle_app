@@ -9,7 +9,7 @@ class WebhooksController < ApplicationController
       # Access the request parameters using params[:param_name]
       # Process the webhook data and perform necessary actions
       # Extract the JSON array from the params
-      events = params[:_json]
+      
   
       # Create a hash to keep track of the most recent event for each vehicle
       latest_events = {}

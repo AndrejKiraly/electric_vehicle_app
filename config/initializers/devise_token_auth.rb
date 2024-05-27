@@ -39,17 +39,17 @@ DeviseTokenAuth.setup do |config|
 
   # By default we will use callbacks for single omniauth.
   # It depends on fields like email, provider and uid.
-  # config.default_callbacks = true
+   config.default_callbacks = true
 
-  # Makes it possible to change the headers names
-  # config.headers_names = {
-  #   :'authorization' => 'Authorization',
-  #   :'access-token' => 'access-token',
-  #   :'client' => 'client',
-  #   :'expiry' => 'expiry',
-  #   :'uid' => 'uid',
-  #   :'token-type' => 'token-type'
-  # }
+   #Makes it possible to change the headers names
+   config.headers_names = {
+     :'authorization' => 'Authorization',
+     :'access-token' => 'access-token',
+     :'client' => 'client',
+     :'expiry' => 'expiry',
+     :'uid' => 'uid',
+     :'token-type' => 'token-type'
+   }
 
   # Makes it possible to use custom uid column
   # config.other_uid = "foo"

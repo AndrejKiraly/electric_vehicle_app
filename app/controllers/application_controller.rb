@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::API
         before_action :configure_permitted_parameters, if: :devise_controller?
+        #devise_token_auth_group :member, contains: [:user, :admin]
         include DeviseTokenAuth::Concerns::SetUserByToken
 
 

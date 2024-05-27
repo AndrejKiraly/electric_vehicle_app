@@ -271,6 +271,11 @@ current_types_data = [
   { id: 30, description: "Direct Current", title: "DC" }
 ]
 
+source_data = [
+  {id:1, title: "OpenChargeMaps"},
+  {id:2, title: "Added from Mobile App"},
+]
+
 amenities_data = [
   { id: 1, title: "Toilets" },
   { id: 2, title: "Shopping Mall" },
@@ -369,6 +374,12 @@ countries_data.each do |country_data|
     country.iso_code = country_data[:iso_code]
     country.continent_code = country_data[:continent_code]
     country.title = country_data[:title]
+  end
+end
+
+source_data.each do |source_data|
+  Source.find_or_create_by!(id: source_data[:id]) do |source|
+    source.title = source_data[:title]
   end
 end
 
