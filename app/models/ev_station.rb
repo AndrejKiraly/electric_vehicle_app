@@ -116,7 +116,7 @@ class EvStation < ApplicationRecord
         longitude, latitude = params[:longitude], params[:latitude]
         Rails.logger.debug("latitude #{latitude},#{longitude}")
         @ev_station.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
-        @ev_station.country = Country.where(id: 1)    #Country.where(title: params[:country_string]).first.id
+        #@ev_station.country = Country.where(id: 1)    #Country.where(title: params[:country_string]).first.id
         return @ev_station
     end
 
