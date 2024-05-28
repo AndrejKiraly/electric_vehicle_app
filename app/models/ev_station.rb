@@ -47,14 +47,18 @@ class EvStation < ApplicationRecord
       end
       ev_stations = ev_stations.min_power(params[:power_kw]) 
 
+      
       if params[:amenity_ids].present?
-      ev_stations = ev_stations.amenities(params[:amenity_ids].split(',').map(&:to_i)) 
+        amenity_ids = params[:amenity_ids].split(',').map(&:to_i)
+        ev_stations = ev_stations.amenities(amenity_ids.size > 1 ? amenity_ids : [params[:amenity_ids][0]])
+        Rails.logger.debug("amenity_ids #{params[:amenity_ids]}")
       end
+      
       if params[:usage_type_ids].present?
       ev_stations = ev_stations.usage_types(params[:usage_type_ids].split(',').map(&:to_i)) 
       end
 
-      ev_stations = ev_stations.rating(params[:rating]) 
+      ev_stations = ev_stations.rating(params[:rating]).distinct 
       
     }
   
@@ -119,7 +123,7 @@ class EvStation < ApplicationRecord
     def self.generateStationsFromOpenChargeMaps(countrycode, current_user_id)
       apikey= ENV['openChargeMapApiKey']
         
-        request_url_openChargeMap= "https://api.openchargemap.io/v3/poi?key=#{apikey}&maxresults=1000&countrycode=#{countrycode}"
+        request_url_openChargeMap= "https://api.openchargemap.io/v3/poi?key=#{apikey}&maxresults=100000000&countrycode=#{countrycode}"
         response = RestClient.get(request_url_openChargeMap)
         if response.code == 200
           stations_data = JSON.parse(response.body)
@@ -128,8 +132,10 @@ class EvStation < ApplicationRecord
           return "Could not fetch data from OpenChargeMap API"
         end
         stations = []
+        count = 0
 
         stations_data.each do |station_data|
+          count = count + 1
           country_id = station_data["AddressInfo"]["Country"]["ID"]
           uuid = station_data["UUID"]
           if EvStation.is_unique(uuid, country_id, 1) && station_data.present?
@@ -257,6 +263,7 @@ class EvStation < ApplicationRecord
         if stations.any?
             return  "#{stations.count}"
         else
+            print count
            return  "All stations were already created"
         end
 
