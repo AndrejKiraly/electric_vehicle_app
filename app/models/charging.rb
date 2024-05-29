@@ -1,11 +1,10 @@
 class Charging < ApplicationRecord
     include EnodeModule
-    has_one :user, class_name: "user", foreign_key: "user_id"
-    #has_one :ev_station, class_name: "ev_station", foreign_key: "ev_station_id"
     belongs_to :connection, optional: true
+    belongs_to :user
     after_save :update_ev_station_rating
     after_destroy :update_ev_station_rating
-    belongs_to :user
+    
     validates :user_id, presence: true  # Enforce presence of user_id
 
     attr_accessor :latitude, :longitude  # Add these attributes

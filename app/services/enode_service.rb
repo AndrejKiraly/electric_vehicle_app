@@ -48,6 +48,110 @@ class EnodeService
     end
   end
 
+  def get_enode_vehicles()
+    return unless @token
+    url = "https://enode-api.sandbox.enode.io/vehicles"
+    headers = { 'Authorization': "Bearer #{@token}",
+                'Content-Type': 'application/json' }
+    begin
+        response = RestClient::Request.execute(
+            method: :get,
+            url: url,
+            headers: headers,
+            )
+        if response.code != 200
+            puts "Error: #{response.code}, #{JSON.parse(response.body)['error']}, #{JSON.parse(response.body)['error_description']}"
+            return nil
+        end
+        return JSON.parse(response.body)
+    rescue RestClient::ExceptionWithResponse => e
+        puts "Error: #{e.response}"
+    end
+end
+
+def get_enode_vehicle(id)
+  return unless @token
+  url = "https://enode-api.sandbox.enode.io/vehicles/#{id}"
+  headers = { 'Authorization': "Bearer #{@token}",
+              'Content-Type': 'application/json' }
+  begin
+      response = RestClient::Request.execute(
+          method: :get,
+          url: url,
+          headers: headers,
+          )
+      if response.code != 200
+          puts "Error: #{response.code}, #{JSON.parse(response.body)['error']}, #{JSON.parse(response.body)['error_description']}"
+          return nil
+      end
+      return JSON.parse(response.body)
+  rescue RestClient::ExceptionWithResponse => e
+      puts "Error: #{e.response}"
+      return nil
+  end
+end
+
+  def get_enode_user_vehicles( user_id)
+    return unless @token
+    url = "https://enode-api.sandbox.enode.io/users/#{user_id}/vehicles"
+    headers = {'Authorization': "Bearer #{@token}",
+                'Content-Type': 'application/json' }
+    begin
+        response = RestClient::Request.execute(
+            method: :get,
+            url: url,
+            headers: headers,
+            )
+        if response.code != 200
+            puts "Error: #{response.code}, #{JSON.parse(response.body)['error']}, #{JSON.parse(response.body)['error_description']}"
+            return nil
+        end
+        return JSON.parse(response.body)
+    rescue RestClient::ExceptionWithResponse => e
+        puts "Error: #{e.response}"
+        return nil
+    end
+  end
+  def enode_link_vehicle_to_user(user_id)
+    return unless @token
+    url = "https://enode-api.sandbox.enode.io/users/#{user_id}/link"
+    headers = {'Authorization': "Bearer #{@token}",
+                'Content-Type': 'application/json' }
+
+    payload = {
+        "vendorType": "vehicle",
+        "language": "en-US",
+        "scopes": [
+          "vehicle:read:data",
+          "vehicle:read:location",
+          "vehicle:control:charging"
+        ],
+        "colorScheme": "system",
+        "redirectUri": "yourapp://integrations/enode"
+    }.to_json
+    begin
+        response = RestClient::Request.execute(
+            method: :post,
+            url: url,
+            headers: headers,
+            payload: payload
+            
+        )
+        if response.code != 200
+            
+            puts "Error: #{response.code}, #{JSON.parse(response.body)['error']}, #{JSON.parse(response.body)['error_description']}"
+            return nil
+        end
+        
+        return JSON.parse(response.body)
+    rescue RestClient::ExceptionWithResponse => e
+        puts "Error: #{e.response}, #{e.response.body}"
+        return nil
+    end
+  end
+
+
+
   private
 
   def encode_credentials(username, password)

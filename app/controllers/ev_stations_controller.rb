@@ -8,10 +8,8 @@ class EvStationsController < ApplicationController
 
   # GET /ev_stations
   def show_user_stations
-    if @user.nil?
-      render json: { error: "User not found" }
-    end
-    @stations = EvStation.where(created_by_id: @user.id)
+    
+    @stations = User.where(id: 1).first.ev_stations.first
     render json: @stations
 
   end
@@ -98,7 +96,7 @@ class EvStationsController < ApplicationController
 
 
     def create_multiple
-        response = EvStation.generateStationsFromOpenChargeMaps(params[:country_code], 1)
+        response = EvStation.generateStationsFromOpenChargeMaps(params[:countrycode], 1)
         if response.is_a?(Integer)
           render json: { message: "Stations created successfully. Added #{reponse} number of Stations" }, status: :created
         elsif response.is_a?(String) && response.include?("All stations were already created")

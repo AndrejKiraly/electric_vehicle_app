@@ -1,5 +1,5 @@
 class CompactEvStationSerializerSerializer < ActiveModel::Serializer
-  attributes :id, :latitude, :longitude, :name, :address_line, :rating, :is_free,  :usage_type_id, :connections, :amenities
+  attributes :id, :latitude, :longitude, :name, :address_line, :rating, :is_free,  :usage_type_id#, :connections, :amenities
 
   
   attribute :latitude do
@@ -10,6 +10,6 @@ class CompactEvStationSerializerSerializer < ActiveModel::Serializer
     object.coordinates.x
   end
 
-  belongs_to :connections, serializer: ConnectionSerializer
-  belongs_to :amenities, serializer: AmenitySerializer
+  #belongs_to :connections, serializer: ConnectionSerializer
+  #belongs_to :amenities, serializer: AmenitySerializer
 end

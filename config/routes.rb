@@ -23,7 +23,7 @@ Rails.application.routes.draw do
   get '/ev_stations/:id', to: 'ev_stations#show'
   #ZMENIT
   get '/planroute', to: 'ev_stations#show_polyline'
-  get '/ev_stations/user', to: 'ev_stations#show_user_stations'
+  get '/ev_stations_user/user', to: 'ev_stations#show_user_stations'
   get '/ev_stations/:id/chargings', to: 'ev_stations#show_chargings_for_station'
   get '/ev_stations/:id/connections', to: 'ev_stations#show_connections_for_station'
 
@@ -49,7 +49,7 @@ Rails.application.routes.draw do
 
   get '/enode_vehicles', to: 'enode_vehicles#index'
   get '/enode_vehicles/user', to: 'enode_vehicles#show_user_vehicles'
-  get '/enode_vehicles/:id(.:format)', to: 'enode_vehicles#show_user_vehicle'
+  get '/enode_vehicles/:id(.:format)', to: 'enode_vehicles#show_vehicle'
   post '/enode_vehicles', to: 'enode_vehicles#create'
 
 

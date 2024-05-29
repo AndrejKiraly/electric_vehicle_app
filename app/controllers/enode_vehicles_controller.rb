@@ -16,32 +16,22 @@ class EnodeVehiclesController < ApplicationController
     end
 
     def show_user_vehicles
-        enode_access_code = login_to_enode
-        if enode_access_code.nil?
-            render json: { message: 'Enode vehicles index failed'}
-        end
-        enode_user_vehicles = get_enode_user_vehicles(enode_access_code, current_user.id)
+        service = EnodeService.new
+        enode_user_vehicles = service.get_enode_user_vehicles(current_user.id)
         data = enode_user_vehicles["data"]
         puts "data #{enode_user_vehicles}" 
         render json: enode_user_vehicles
     end
 
-    def show_user_vehicle
-        enode_access_code = login_to_enode
-        if enode_access_code.nil?
-            render json: { message: 'Enode vehicles index failed', status: 500}
-        end
-        enode_user_vehicle = get_enode_vehicle(enode_access_code, params[:id] )
+    def show_vehicle
+        service = EnodeService.new
+        enode_user_vehicle = service.get_enode_vehicle(params[:id])
         render json:  enode_user_vehicle.to_json, status: :ok
-        
     end
 
     def create
-        enode_access_code = login_to_enode
-        if enode_access_code.nil?
-            render json: { message: 'Linking enode vehicle failed'}
-        end
-        enode_vehicle_link_url = enode_link_vehicle_to_user(enode_access_code, current_user.id)
+        service = EnodeService.new
+        enode_vehicle_link_url = service.enode_link_vehicle_to_user(current_user.id)
         if enode_vehicle_link_url.nil?
             render json: { message: 'Linking enode vehicle failed'}
         end

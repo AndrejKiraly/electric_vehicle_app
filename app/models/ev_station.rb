@@ -1,8 +1,9 @@
 class EvStation < ApplicationRecord
     has_many :connections, dependent: :destroy
     has_many :chargings, through: :connections, dependent: :destroy
-    has_and_belongs_to_many :amenities, dependent: :destroy
+    belongs_to :user_id, class_name: 'User', foreign_key: 'created_by_id'
 
+    has_and_belongs_to_many :amenities, dependent: :destroy
     belongs_to :source
     belongs_to :usage_type
     belongs_to :country, optional: true
@@ -62,9 +63,8 @@ class EvStation < ApplicationRecord
       
     }
   
-    def self.is_unique(uuid, country_id, source_id)
+    def self.is_unique(uuid, country_id, source_id, existing_stations)
         # If station was created in app does not need to check uuid from openchargemap
-      existing_stations= EvStation.all.where(country_id: country_id, source_id: source_id)
       for existing_station in existing_stations
         if existing_station.uuid == uuid
           puts "already in database"
@@ -123,10 +123,12 @@ class EvStation < ApplicationRecord
     def self.generateStationsFromOpenChargeMaps(countrycode, current_user_id)
       apikey= ENV['openChargeMapApiKey']
         
-        request_url_openChargeMap= "https://api.openchargemap.io/v3/poi?key=#{apikey}&maxresults=100000000&countrycode=#{countrycode}"
+        request_url_openChargeMap= "https://api.openchargemap.io/v3/poi?key=#{apikey}&maxresults=100&countrycode=#{countrycode}"
+        
         response = RestClient.get(request_url_openChargeMap)
         if response.code == 200
           stations_data = JSON.parse(response.body)
+          Rails.logger.debug("request_url_openChargeMap #{stations_data.count}")
         else
           # Handle error case
           return "Could not fetch data from OpenChargeMap API"
@@ -138,7 +140,8 @@ class EvStation < ApplicationRecord
           count = count + 1
           country_id = station_data["AddressInfo"]["Country"]["ID"]
           uuid = station_data["UUID"]
-          if EvStation.is_unique(uuid, country_id, 1) && station_data.present?
+          existing_stations= EvStation.all.where(country_id: country_id, source_id: 1)
+          if EvStation.is_unique(uuid, country_id, 1, existing_stations) && station_data.present?
             if station_data["AddressInfo"].present?
               name = station_data["AddressInfo"]["Title"]
               latitude = station_data["AddressInfo"]["Latitude"]
@@ -146,13 +149,12 @@ class EvStation < ApplicationRecord
               address_line = station_data["AddressInfo"]["AddressLine1"]
               city = station_data["AddressInfo"]["Town"]
               country = station_data["AddressInfo"]["Country"]["Title"]
-              country_id = station_data["AddressInfo"]["Country"]["ID"]
               post_code = station_data["AddressInfo"]["Postcode"]
               phone_number = station_data["AddressInfo"]["ContactTelephone1"] || "unknown"
               email = station_data["AddressInfo"]["ContactEmail"] || "unknown"
               coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
             end
-            uuid = station_data["UUID"]
+            
             if station_data["DataProvider"].present?
               source_id = 1
             end      
@@ -213,8 +215,6 @@ class EvStation < ApplicationRecord
 
                   if connection_data["CurrentType"].present?
                     current_type_id = connection_data["CurrentType"]["ID"]
-                  else
-                    current_type_id = 10
                   end
                   if connection_data["Amps"].present?
                     amps = connection_data["Amps"]
@@ -236,7 +236,7 @@ class EvStation < ApplicationRecord
                     connection_type_id: connection_type_id ? connection_type_id : 0,
                     is_operational_status: is_operational_status ,
                     is_fast_charge_capable: is_fast_charge_capable ,
-                    current_type_id: current_type_id ,
+                    current_type_id: current_type_id ? current_type_id : 10,
                     amps: amps ? amps : 0,
                     voltage: voltage ? voltage : 0,
                     power_kw: power_kw ? power_kw : 0,
