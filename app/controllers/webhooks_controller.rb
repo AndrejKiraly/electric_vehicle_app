@@ -33,28 +33,40 @@ class WebhooksController < ApplicationController
   
         if power_delivery_state == 'PLUGGED_IN:CHARGING'
           # Create a charging record
+
+
+          if VehicleRoute.find_by(vehicle_id: vehicle['id'], is_finished: false).nil?
+            Charging.create(
+            vehicle_id:vehicle['id'],
+            vehicle_route_id: VehicleRoute.find_by(vehicle_id: vehicle['id'], is_finished: false).id,
+            user_id: user_id,
+            battery_level_start: charge_state['batteryLevel'],
+            start_time: Time.current,
+            coordinates: RGeo::Geographic.spherical_factory(srid: 4326).point(vehicle['location']['longitude'], vehicle['location']['latitude']),
+            is_finished: false
+          )
+
+          end
+
           Charging.create(
             vehicle_id:vehicle['id'],
             user_id: user_id,
             battery_level_start: charge_state['batteryLevel'],
             start_time: Time.current,
-            latitude: vehicle['location']['latitude'],
-            longitude: vehicle['location']['longitude'],
+            coordinates: RGeo::Geographic.spherical_factory(srid: 4326).point(vehicle['location']['longitude'], vehicle['location']['latitude']),
             is_finished: false
           )
-        elsif %w[FINISHED UNPLUGGED].include?(power_delivery_state)
+        elsif %w[PLUGGED_IN:COMPLETE UNPLUGGED].include?(power_delivery_state)
           # Update charging record to finished
           charging = Charging.find_by(vehicle_id:, user_id:, is_finished: false)
           charging&.update(
             is_finished: true,
             battery_level_end: charge_state['batteryLevel'],
+            energy_used: charge_state['batteryLevel'] - charging.battery_level_start * charge_state['batteryCapacity'] / 100.0,
             end_time: Time.current
           )
         end
       end
-  
-      Rails.logger.info("Webhook received: #{params}")
-      puts "Webhook received: #{params}"
       render json: { message: 'Webhook received successfully'}, status: :ok
     end
   end

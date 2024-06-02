@@ -4,39 +4,24 @@ class Charging < ApplicationRecord
     belongs_to :user
     after_save :update_ev_station_rating
     after_destroy :update_ev_station_rating
+    belongs_to :vehicle_route, optional: true
     
     validates :user_id, presence: true  # Enforce presence of user_id
 
     attr_accessor :latitude, :longitude  # Add these attributes
+
+    scope :for_month, ->(month, year) {
+        start_date = Date.new(year, month, 1).beginning_of_day # Use Date for flexibility
+        end_date = start_date.end_of_month.end_of_day         # Explicitly end of day
+        where(start_time: start_date..end_date)
+    }
     
-    def self.calculate_charging_time(enode_vehicle_id, connection_id, target_batery_hz)
-        enode_access_token = EnodeModule.enode_login
-        enode_vehicle = EnodeModule.get_enode_vehicle(enode_access_token, enode_vehicle_id)
-        max_current = enode_vehicle['chargeState']['maxCurrent']
-        connection = Connection.find(connection_id)
-        connection_power = connection.power_kw
-        charge_limit = enode_vehicle["chargeState"]["chargeLimit"]
-        battery_level = enode_vehicle['chargeState']['batteryLevel']
-        battery_capacity = enode_vehicle['chargeState']['batteryCapacity']
-        battery_total_hz = battery_level.to_f * battery_capacity.to_f / 100.0
-        charging_hz = max_current < connection_power ? max_current : connection_power
-
-        hz_to_be_charged = target_batery_hz - battery_total_hz
-        charging_time = hz_to_be_charged / charging_hz * 60
-        puts  charging_hz, battery_total_hz 
-        
-       # puts battery_capacity, battery_level, charge_limit, connection_power, max_current
-        return charging_time
-
-    end
-
     def self.monthly_summary(month, year)
         chargings = Charging.all.for_month(month, year)
         chargings = chargings.where(is_finished: true)
         total_charging_cost = chargings.sum(:price) 
         total_energy_used = chargings.sum(:energy_used)
         
-
         summary_data = {
             total_charging_cost: total_charging_cost,
             total_energy_used: total_energy_used,
@@ -64,6 +49,9 @@ class Charging < ApplicationRecord
             end
         end
         @charging = Charging.new(params)
+        if VehicleRoute.exists?(vehicle_id: params[:vehicle_id], is_finished: false)
+            @charging.vehicle_route_id = VehicleRoute.find_by(vehicle_id: params[:vehicle_id], is_finished: false).id
+        end
         longitude = params[:longitude]
         latitude = params[:latitude]
         @charging.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
@@ -71,52 +59,35 @@ class Charging < ApplicationRecord
         return @charging
 
 
+
+        # def self.calculate_charging_time(enode_vehicle_id, connection_id, target_batery_hz)
+    #     enode_access_token = EnodeModule.enode_login
+    #     enode_vehicle = EnodeModule.get_enode_vehicle(enode_access_token, enode_vehicle_id)
+    #     max_current = enode_vehicle['chargeState']['maxCurrent']
+    #     connection = Connection.find(connection_id)
+    #     connection_power = connection.power_kw
+    #     charge_limit = enode_vehicle["chargeState"]["chargeLimit"]
+    #     battery_level = enode_vehicle['chargeState']['batteryLevel']
+    #     battery_capacity = enode_vehicle['chargeState']['batteryCapacity']
+    #     battery_total_hz = battery_level.to_f * battery_capacity.to_f / 100.0
+    #     charging_hz = max_current < connection_power ? max_current : connection_power
+
+    #     hz_to_be_charged = target_batery_hz - battery_total_hz
+    #     charging_time = hz_to_be_charged / charging_hz * 60
+    #     puts  charging_hz, battery_total_hz 
+        
+    #    # puts battery_capacity, battery_level, charge_limit, connection_power, max_current
+    #     return charging_time
+
+    # end
         
     end
 
 
 
 
-    scope :for_month, ->(month, year) {
-        start_date = Date.new(year, month, 1).beginning_of_day # Use Date for flexibility
-        end_date = start_date.end_of_month.end_of_day         # Explicitly end of day
-        where(start_time: start_date..end_date)
-    }
-
     
 
-    
-
-    
-    # def login_to_enode
-    #     Dotenv.load('.env')
-    #     client_id = ENV['ENODE_CLIENT_ID']
-    #     client_secret = ENV['ENODE_CLIENT_SECRET']
-    #     url = "https://oauth.sandbox.enode.io/oauth2/token"
-    #     #client_id = Base64.encode64(client_id)
-    #     #client_secret = Base64.encode64(client_secret)
-    #     basic_auth = { username: client_id, password: client_secret }
-    #     payload = { grant_type: 'client_credentials' }
-
-    #     begin
-    #         response = RestClient::Request.execute(
-    #             method: :post,
-    #             url: url,
-    #             user: client_id,
-    #             password: client_secret,
-    #             payload: payload
-    #         )
-    #         if response.code != 200
-    #             puts "Error: #{response.code}, #{JSON.parse(response.body)['error']}, #{JSON.parse(response.body)['error_description']}"
-    #             return nil
-    #         end
-    #         access_token = JSON.parse(response.body)['access_token']
-    #         puts access_token
-    #         return access_token
-    #     rescue RestClient::ExceptionWithResponse => e
-    #         puts "Error: #{e.response}"
-    #     end     
-    # end
 
 
     

@@ -2,6 +2,9 @@ require_relative "boot"
 
 require "rails/all"
 
+require "sprockets/railtie"
+require "action_view/railtie"
+
 gem 'rack-cors', :require => 'rack/cors'
 
 # Require the gems listed in Gemfile, including any gems
@@ -24,9 +27,13 @@ module ElectricVehicleApp
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w(assets tasks))
 
-    config.session_store :cookie_store, key: '_interslice_session'
     config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore
+    config.session_store :cookie_store, key: '_interslice_session'
     config.middleware.use config.session_store, config.session_options
+    config.middleware.use ActionDispatch::Flash
+
+    config.action_controller.raise_on_open_redirects = false
 
     # Configuration for the application, engines, and railties goes here.
     #

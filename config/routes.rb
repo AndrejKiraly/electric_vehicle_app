@@ -1,21 +1,37 @@
 
 
 Rails.application.routes.draw do
-  mount_devise_token_auth_for 'User', at: 'auth'
+  
+  
+  mount_devise_token_auth_for 'User', at: 'auth', controllers: {
+    passwords: 'overrides/passwords'
+  }
+
+  get 'password_reset', to: 'passwords#edit'
+  put 'password_reset', to: 'passwords#update'
+  
+  
 
   mount_devise_token_auth_for 'StationAdmin', at: 'admin_auth'
   # ...your other routes...
     
   
-
+  
+    
+  
 
 
   #devise_for :devise_users
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-  
 
+  get 'pages/success', to: 'pages#success', as: 'success'
 
+  # namespace :admin_panel do 
+  #   root 'admin#index'
+  #   get '/versions', to: 'admin#versions'
+  # end
+      
   
 
 #SERVER ROUTE https://electric-vehicle-app.onrender.com
@@ -51,6 +67,7 @@ Rails.application.routes.draw do
   get '/enode_vehicles/user', to: 'enode_vehicles#show_user_vehicles'
   get '/enode_vehicles/:id(.:format)', to: 'enode_vehicles#show_vehicle'
   post '/enode_vehicles', to: 'enode_vehicles#create'
+  delete '/enode_vehicles', to: 'enode_vehicles#delete'
 
 
   get '/chargings', to: 'chargings#index'
@@ -61,6 +78,19 @@ Rails.application.routes.draw do
   patch '/chargings/:id', to: 'chargings#update'
   delete '/chargings/:id', to: 'chargings#destroy'
   get  '/chargings/:id/nearby_ev_stations', to: 'ev_stations#show_stations_close_to_charging'
+
+
+  post '/admin_panel/versions/:id/reject', to: 'admin_panel#reject_version', as: 'reject_version'
+  post '/admin_panel/versions/:id/accept', to: 'admin_panel#accept_version', as: 'accept_version'
+  get '/admin_panel/versions', to: 'admin_panel#index', as: 'show_pending_versions'
+  
+  # namespace :admin_panel do
+  #   get '/versions', to: 'admin_panel#versions'
+  # end
+  post '/vehicle_routes', to: 'vehicle_routes#create_tracked_route'
+  post '/vehicle_routes/:id/end', to: 'vehicle_routes#end_tracked_route'
+  post '/vehicle_routes/end_all', to: 'vehicle_routes#end_all_routes'
+  patch '/vehicle_routes/:id/update_polyline', to: 'vehicle_routes#update_route_polyline'
 
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

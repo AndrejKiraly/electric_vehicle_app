@@ -48,6 +48,35 @@ class EnodeService
     end
   end
 
+  def unlink_user(user_id)
+    return unless @token
+
+    url = "https://enode-api.sandbox.enode.io/users/#{user_id}"
+    headers = { 'Authorization': "Bearer #{@token}",
+                'Content-Type': 'application/json' }
+    begin
+      # Execute DELETE request
+      response = RestClient::Request.execute(
+        method: :delete,
+        url: url,
+        headers: headers
+      )
+    
+      # Check response code
+      if response.code != 200 && response.code != 204
+        puts "Error: #{response.code}, #{JSON.parse(response.code)['error']}, #{JSON.parse(response.code)['error_description']}"
+        return nil
+      end
+    
+      # Handle successful deletion (200 OK or 204 No Content)
+      return response.body.empty? ? nil : JSON.parse(response.body)  # Handle empty or non-empty response body
+    
+    rescue RestClient::ExceptionWithResponse => e
+      puts "Error: #{e.response}"
+      return nil
+    end
+  end
+
   def get_enode_vehicles()
     return unless @token
     url = "https://enode-api.sandbox.enode.io/vehicles"
@@ -66,6 +95,7 @@ class EnodeService
         return JSON.parse(response.body)
     rescue RestClient::ExceptionWithResponse => e
         puts "Error: #{e.response}"
+        return nil
     end
 end
 

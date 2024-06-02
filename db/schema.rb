@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_29_093732) do
+ActiveRecord::Schema[7.1].define(version: 2024_06_01_173204) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "postgis"
@@ -44,8 +44,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_29_093732) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.geography "coordinates", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
+    t.bigint "vehicle_route_id"
     t.index ["connection_id"], name: "index_chargings_on_connection_id"
+    t.index ["coordinates"], name: "index_chargings_on_coordinates", using: :gist
     t.index ["user_id"], name: "index_chargings_on_user_id"
+    t.index ["vehicle_route_id"], name: "index_chargings_on_vehicle_route_id"
   end
 
   create_table "connection_types", id: :serial, force: :cascade do |t|
@@ -130,27 +133,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_29_093732) do
     t.geography "coordinates", limit: {:srid=>4326, :type=>"st_point", :geographic=>true}
     t.bigint "source_id"
     t.string "uuid", default: ""
+    t.index ["coordinates"], name: "index_ev_stations_on_coordinates", using: :gist
     t.index ["country_id"], name: "index_ev_stations_on_country_id"
     t.index ["created_by_id"], name: "index_ev_stations_on_created_by_id"
     t.index ["source_id"], name: "index_ev_stations_on_source_id"
     t.index ["updated_by_id"], name: "index_ev_stations_on_updated_by_id"
     t.index ["usage_type_id"], name: "index_ev_stations_on_usage_type_id"
-  end
-
-  create_table "routes", force: :cascade do |t|
-    t.integer "energy_used"
-    t.decimal "latitude_start", precision: 10, scale: 7
-    t.decimal "longitude_start", precision: 10, scale: 7
-    t.decimal "latitude_end", precision: 10, scale: 7
-    t.decimal "longitude_end", precision: 10, scale: 7
-    t.datetime "start_time"
-    t.datetime "end_time"
-    t.boolean "is_finished"
-    t.float "distance"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id"
-    t.index ["user_id"], name: "index_routes_on_user_id"
   end
 
   create_table "sources", id: :serial, force: :cascade do |t|
@@ -219,8 +207,37 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_29_093732) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
+  create_table "vehicle_routes", force: :cascade do |t|
+    t.datetime "start_time"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.float "distance", default: 0.0
+    t.float "energy_used", default: 0.0
+    t.datetime "end_time"
+    t.boolean "is_finished", default: false
+    t.geography "polyline", limit: {:srid=>4326, :type=>"line_string", :geographic=>true}
+    t.integer "battery_start"
+    t.integer "battery_end"
+    t.string "vehicle_id"
+    t.index ["user_id"], name: "index_vehicle_routes_on_user_id"
+  end
+
+  create_table "versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.bigint "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.json "object"
+    t.json "object_changes"
+    t.integer "status", default: 0
+    t.datetime "created_at"
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+  end
+
   add_foreign_key "chargings", "connections"
   add_foreign_key "chargings", "users"
+  add_foreign_key "chargings", "vehicle_routes"
   add_foreign_key "connections", "connection_types"
   add_foreign_key "connections", "current_types"
   add_foreign_key "connections", "ev_stations"
@@ -231,5 +248,5 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_29_093732) do
   add_foreign_key "ev_stations", "usage_types"
   add_foreign_key "ev_stations", "users", column: "created_by_id"
   add_foreign_key "ev_stations", "users", column: "updated_by_id"
-  add_foreign_key "routes", "users"
+  add_foreign_key "vehicle_routes", "users"
 end

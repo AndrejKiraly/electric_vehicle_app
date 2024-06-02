@@ -56,7 +56,10 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
+  config.action_mailer.delivery_method = :letter_opener
+  config.action_mailer.perform_deliveries = true
 
+  config.action_mailer.default_url_options = { :host => "127.0.0.1:3000"}
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 

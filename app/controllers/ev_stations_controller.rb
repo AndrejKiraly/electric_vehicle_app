@@ -15,14 +15,13 @@ class EvStationsController < ApplicationController
   end
 
   def index
-    #ev_stations = EvStationService.new(params).call
-    #ev_stations_with_param = EvStation.filter_by_params_dynamic(params)
-    #InvoiceCreator::TAX_FEE
-    #InvoiceCreator.generate
-    latitude = params[:lat].to_f
-    longitude = params[:lng].to_f
     ev_stations = EvStation.filter_stations(params)
-    render json: ev_stations, each_serializer: CompactEvStationSerializerSerializer
+    factory = RGeo::Geographic.spherical_factory(srid: 4326)
+    ev_stations.each do |station|
+      point = factory.point(params[:lng], params[:lat])
+      station.distance = station.coordinates.distance(point) / 1000
+    end
+    render json: ev_stations, each_serializer: CompactEvStationSerializer
   end
 
   # GET /ev_stations/1
@@ -68,13 +67,8 @@ class EvStationsController < ApplicationController
         nearby_stations = EvStation.near(latitude, longitude, searching_distance)
 
         unique_stations.merge(nearby_stations)
-      end
-
-
-      
-      
-      
-      render json: unique_stations , each_with_index: CompactEvStationSerializerSerializer
+    end
+      render json: unique_stations , each_with_index: CompactEvStationSerializer
     else
       render json: { error: "Invalid parameters" }
       
@@ -95,24 +89,24 @@ class EvStationsController < ApplicationController
   end
 
 
-    def create_multiple
-        response = EvStation.generateStationsFromOpenChargeMaps(params[:countrycode], 1)
-        if response.is_a?(Integer)
-          render json: { message: "Stations created successfully. Added #{reponse} number of Stations" }, status: :created
-        elsif response.is_a?(String) && response.include?("All stations were already created")
-          render json: { message: response }, status: :created
-        elsif response.is_a?(String) && response.include?("Error creating connection:")
-          render json: { message: response }, status: :unprocessable_entity
-        elsif response.is_a?(String) && response.include?("Could not fetch data from OpenChargeMap API")
-          render json: { message: response }, status: :unprocessable_entity
-        else
-          render json: { message: "Unkown error" }, status: :unprocessable_entity
-        end
-    end
+  #spravit s exceptions
+  def create_multiple
+      response = EvStation.generate_stations_from_open_charge_maps(params[:countrycode], 1)
+      if response.is_a?(Integer)
+        render json: { message: "Stations created successfully. Added #{response} number of Stations" }, status: :created
+      elsif response.is_a?(String) && response.include?("All stations were already created")
+        render json: { message: response }, status: :created
+      elsif response.is_a?(String) && response.include?("Error creating connection:")
+        render json: { message: response }, status: :unprocessable_entity
+      elsif response.is_a?(String) && response.include?("Could not fetch data from OpenChargeMap API")
+        render json: { message: response }, status: :unprocessable_entity
+      else
+        render json: { message: "Unkown error" }, status: :unprocessable_entity
+      end
+  end
   
 
   
-
   # PATCH/PUT /ev_stations/1
   
   def update
@@ -120,7 +114,7 @@ class EvStationsController < ApplicationController
       #@ev_station.update(amenity_ids: [1,2,3])
       
       @ev_station.updated_by_id = current_user.id
-      @ev_station.amenity_ids = params[:amenity_ids]
+      #@ev_station.amenity_ids = params[:amenity_ids]
       latitude = params[:latitude]
       longitude = params[:longitude]
       @ev_station.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
@@ -149,8 +143,6 @@ class EvStationsController < ApplicationController
     else
       render json: { message: "Failed to delete stations" }
     end
-
-    
   end
 
   private

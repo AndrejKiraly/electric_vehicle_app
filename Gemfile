@@ -37,6 +37,10 @@ gem 'devise', '~> 4.9', '>= 4.9.3'
 gem 'devise_token_auth', git:"https://github.com/lynndylanhurley/devise_token_auth"
 gem 'active_model_serializers', '~> 0.10.2'
 gem 'activerecord-postgis-adapter'
+gem 'sprockets-rails', :require => 'sprockets/railtie'
+gem 'sass-rails'
+gem 'paper_trail', '~> 15.1'
+gem "letter_opener", group: :development
 
 
 
