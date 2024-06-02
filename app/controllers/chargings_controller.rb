@@ -63,7 +63,7 @@ class ChargingsController < ApplicationController
         @charging = Charging.find(params[:id])
         latitude = params[:latitude]
         longitude = params[:longitude]
-        if Connection.find_by(id: params[:connection_id]).nil?
+        if params[:connection_id].present? && Connection.find_by(id: params[:connection_id]).nil?
             render json: { error: "Connection not found" }, status: :unprocessable_entity
             return
         end
