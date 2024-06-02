@@ -105,7 +105,7 @@ class OpenChargeMapService
                     quantity = connection_data["Quantity"].to_i
                 end
                 # Create a new Connection object for each connection
-                debugger
+                
                 connection = Connection.new(
                     connection_type_id: connection_type_id ? connection_type_id : 0,
                     is_operational_status: is_operational_status ,
