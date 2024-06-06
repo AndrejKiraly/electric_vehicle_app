@@ -1,23 +1,21 @@
 class Charging < ApplicationRecord
-    include EnodeModule
     belongs_to :connection, optional: true
     belongs_to :user
     after_save :update_ev_station_rating
     after_destroy :update_ev_station_rating
     belongs_to :vehicle_route, optional: true
     
-    validates :user_id, presence: true  # Enforce presence of user_id
-
+    validates :user_id, presence: true 
     attr_accessor :latitude, :longitude  # Add these attributes
 
     scope :for_month, ->(month, year) {
-        start_date = Date.new(year, month, 1).beginning_of_day # Use Date for flexibility
-        end_date = start_date.end_of_month.end_of_day         # Explicitly end of day
+        start_date = Date.new(year, month, 1).beginning_of_day 
+        end_date = start_date.end_of_month.end_of_day      
         where(start_time: start_date..end_date)
     }
     
-    def self.monthly_summary(month, year)
-        chargings = Charging.all.for_month(month, year)
+    def self.monthly_summary(month, year, user_id)
+        chargings = Charging.all.where(user_id:  user_id).for_month(month, year)
         chargings = chargings.where(is_finished: true)
         total_charging_cost = chargings.sum(:price) 
         total_energy_used = chargings.sum(:energy_used)
@@ -36,7 +34,8 @@ class Charging < ApplicationRecord
         end
     end
 
-    def self.createCharging(params, current_user_id)
+    def self.createCharging(params, current_user_id,  longitude, latitude)
+        
         if params[:connection_id].present?
             connection = Connection.find_by(id: params[:connection_id])
             if connection.nil?
@@ -44,23 +43,23 @@ class Charging < ApplicationRecord
             else
                 #set coordinates from given connections ev_station
                 ev_station = EvStation.find(Connection.find(params[:connection_id]).ev_station_id)
-                params[:latitude] = ev_station.coordinates.y
-                params[:longitude] = ev_station.coordinates.x
+                latitude = ev_station.coordinates.y
+                longitude = ev_station.coordinates.x
             end
         end
         @charging = Charging.new(params)
         if VehicleRoute.exists?(vehicle_id: params[:vehicle_id], is_finished: false)
             @charging.vehicle_route_id = VehicleRoute.find_by(vehicle_id: params[:vehicle_id], is_finished: false).id
         end
-        longitude = params[:longitude]
-        latitude = params[:latitude]
         @charging.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
         @charging.user_id = current_user_id
-        return @charging
+        return @charging        
+    end
 
 
 
-        # def self.calculate_charging_time(enode_vehicle_id, connection_id, target_batery_hz)
+
+    # def self.calculate_charging_time(enode_vehicle_id, connection_id, target_batery_hz)
     #     enode_access_token = EnodeModule.enode_login
     #     enode_vehicle = EnodeModule.get_enode_vehicle(enode_access_token, enode_vehicle_id)
     #     max_current = enode_vehicle['chargeState']['maxCurrent']
@@ -80,13 +79,6 @@ class Charging < ApplicationRecord
     #     return charging_time
 
     # end
-        
-    end
-
-
-
-
-    
 
 
 

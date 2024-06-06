@@ -2,21 +2,20 @@ class EvStationsController < ApplicationController
 
     #include InvoiceCreator
   before_action :set_ev_station, only: %i[ show update destroy ]
-  #before_action :authenticate_user!, except: [:index, :show, :create_multiple, :show_polyline]
-  before_action :set_user, only: %i[ show_user_stations create update destroy]
-  require "fast_polylines"
+  before_action :authenticate_user!, except: [:index, :show, :show_stations_close_to_charging, :show_chargings_for_station, :show_connections_for_station]
 
   # GET /ev_stations
   def show_user_stations
-    
-    @stations = User.where(id: 1).first.ev_stations.first
-    render json: @stations
-
+    page = params[:page].to_i || 1 
+    @stations = current_user.ev_stations
+    @stations = @stations.offset((page) * 50).limit(50)
+    render json: @stations, each_serializer: EvStationSerializer
   end
 
   def index
     ev_stations = EvStation.filter_stations(params)
     factory = RGeo::Geographic.spherical_factory(srid: 4326)
+    
     ev_stations.each do |station|
       point = factory.point(params[:lng], params[:lat])
       station.distance = station.coordinates.distance(point) / 1000
@@ -52,31 +51,6 @@ class EvStationsController < ApplicationController
     
   end
 
-  def show_polyline
-    if (request.params[:polyline].present? && request.params[:distance].present? )
-      polyline = request.params[:polyline]
-      searching_distance = params[:distance].to_i
-      decoded_polyline = FastPolylines::Decoder.decode(polyline)
-      latitude= decoded_polyline[0][0]
-      longitude = decoded_polyline[0][1]
-      unique_stations = Set.new
-
-      decoded_polyline.each do |point|
-        latitude = point[0]
-        longitude = point[1]
-        nearby_stations = EvStation.near(latitude, longitude, searching_distance)
-
-        unique_stations.merge(nearby_stations)
-    end
-      render json: unique_stations , each_with_index: CompactEvStationSerializer
-    else
-      render json: { error: "Invalid parameters" }
-      
-    end
-
-
-  end
-
   # POST /ev_stations
   def create
       @ev_station = EvStation.createStation(ev_station_creating_params, 1)
@@ -87,10 +61,11 @@ class EvStationsController < ApplicationController
       end
 
   end
-
-
-  #spravit s exceptions
+  
   def create_multiple
+    if current_user.is_admin == false
+      render json: { message: "You are not authorized to create stations" }, status: :unauthorized
+    end
       response = EvStation.generate_stations_from_open_charge_maps(params[:countrycode], 1)
       if response.is_a?(Integer)
         render json: { message: "Stations created successfully. Added #{response} number of Stations" }, status: :created
@@ -104,23 +79,14 @@ class EvStationsController < ApplicationController
         render json: { message: "Unkown error" }, status: :unprocessable_entity
       end
   end
-  
-
-  
+    
   # PATCH/PUT /ev_stations/1
-  
   def update
     if @ev_station.update(ev_station_creating_params)
-      #@ev_station.update(amenity_ids: [1,2,3])
-      
-      @ev_station.updated_by_id = current_user.id
-      #@ev_station.amenity_ids = params[:amenity_ids]
+      @ev_station.updated_by_id = 1
       latitude = params[:latitude]
       longitude = params[:longitude]
       @ev_station.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
-      
-      Rails.logger.info("Amenity ids: #{ev_station_creating_params[:amenity_ids]}")
-
       render json: @ev_station, each_serializer: EvStationSerializer
     else
       render json: @ev_station.errors, status: :unprocessable_entity
@@ -130,6 +96,8 @@ class EvStationsController < ApplicationController
   # DELETE /ev_stations/1
   def destroy
     @ev_station.destroy!
+
+    render json: {message: "Deleted Succesfully"},status: :no_content
   end
 
   def destroy_multiple
@@ -139,9 +107,9 @@ class EvStationsController < ApplicationController
       @ev_stations = EvStation.all
     end
     if @ev_stations.destroy_all
-      render json: { message: "Stations deleted successfully" }
+      render json: { message: "Stations deleted successfully" }, status: :no_content
     else
-      render json: { message: "Failed to delete stations" }
+      render json: { message: "Failed to delete stations" }, status: :unprocessable_entity
     end
   end
 
@@ -149,25 +117,6 @@ class EvStationsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_ev_station
       @ev_station = EvStation.find(params[:id])
-    end
-
-    def set_user
-      @user = User.find_by(uid: request.headers["uid"])
-      
-    end
-
-    # Only allow a list of trusted parameters through.
-    def ev_station_params
-      params.require(:ev_station).permit(:name, :latitude, :longitude,
-       :address_line, :city, :country_string,
-        :post_code, :uuid, :source, :created_by_id,
-        :updated_by_id, :rating, :user_rating_total,
-         :phone_number, :email, :operator_website_url,
-         :is_free,:open_hours,:usage_type_id,:usage_type_ids[],
-          :amenity_ids,
-          :current_type_id,:country_id, :source_id,
-           :connection_type_id,
-           :connection_types_id[]  )
     end
 
     def ev_station_creating_params
@@ -178,7 +127,6 @@ class EvStationsController < ApplicationController
         :rating, :user_rating_total, :phone_number, :email,
         :operator_website_url,:is_free,:open_hours, :usage_type_id, :source_id, 
         :country_id,amenity_ids: [],connection_types_ids:[] )
-      
     end
 
 

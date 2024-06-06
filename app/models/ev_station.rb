@@ -3,9 +3,6 @@ class EvStation < ApplicationRecord
     has_many :connections, dependent: :destroy
     has_many :chargings, through: :connections, dependent: :destroy
     belongs_to :user_id, class_name: 'User', foreign_key: 'created_by_id'
-
-    has_paper_trail :skip => [:created_at, :updated_at]
-
     has_and_belongs_to_many :amenities, dependent: :destroy
     belongs_to :source
     belongs_to :usage_type
@@ -38,11 +35,13 @@ class EvStation < ApplicationRecord
       bounds_ne_lat = params[:bounds_ne].split(",")[0].to_f
       bounds_sw_lng = params[:bounds_sw].split(",")[1].to_f
       bounds_ne_lng = params[:bounds_ne].split(",")[1].to_f
-      ev_stations = EvStation.all.within_coords(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng)
+      
+      ev_stations = EvStation.all.within_coords(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng)     
       ev_stations = ev_stations.is_free(params[:is_free]) 
       ev_stations = ev_stations.fast_charge(params[:is_fast_charge_capable]) 
       ev_stations = ev_stations.current_type(params[:current_type_id])
       ev_stations = ev_stations.min_power(params[:power_kw]) 
+      ev_stations = ev_stations.rating(params[:rating])
 
       if params[:connection_type_ids].present?
       ev_stations = ev_stations.connection_type(params[:connection_type_ids].scan(/\d+/).map(&:to_i))
@@ -55,38 +54,26 @@ class EvStation < ApplicationRecord
       
       if params[:usage_type_ids].present?
         ev_stations = ev_stations.usage_types(params[:usage_type_ids].scan(/\d+/).map(&:to_i))
-      end
-
+      end 
       
-      
-      
+      ev_stations
     }
 
-    def self.distance_from_point(lng, lat)
+    def self.distance_from_point(lng, lat, id)
       find_by_sql(["
         SELECT 
           id,
           ST_Distance(
-            coordinates::geography, 
-            ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography
+        coordinates::geography, 
+        ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography
           ) AS distance_in_meters
         FROM 
           stations
-        ", lng, lat])
-    end
-  
-  
-    def self.is_unique(uuid, country_id, source_id, existing_stations)
-        # If station was created in app does not need to check uuid from openchargemap
-      for existing_station in existing_stations
-        if existing_station.uuid == uuid
-          return false
+        WHERE
+          id = ?
+        ", lng, lat, id])
         end
-      end
-      return true
-    
-    end      
-      
+  
         
   
     
@@ -113,6 +100,17 @@ class EvStation < ApplicationRecord
         return @ev_station
     end
 
+    def self.is_unique(uuid, existing_stations)
+      # If station was created in app does not need to check uuid from openchargemap
+      for existing_station in existing_stations
+        if existing_station.uuid == uuid
+          return false
+        end
+      end
+      return true
+  
+    end  
+
     def self.generate_stations_from_open_charge_maps(countrycode, current_user_id)
         stations_data = OpenChargeMapService.fetch_stations_data(countrycode)
         if stations_data.nil?
@@ -124,8 +122,8 @@ class EvStation < ApplicationRecord
           count = count + 1
           country_id = station_data["AddressInfo"]["Country"]["ID"]
           uuid = station_data["UUID"]
-          existing_stations= EvStation.all.where(country_id: country_id, source_id: 1)
-          if EvStation.is_unique(uuid, country_id, 1, existing_stations) && station_data.present?
+          existing_stations= EvStation.all.where(country_id: country_id)
+          if EvStation.is_unique(uuid, existing_stations) && station_data.present? && station_data["DataProvider"]["ID"] == 1
             @ev_station = OpenChargeMapService.deserialize_station(station_data, current_user_id, country_id, uuid)
             if @ev_station.save
               if OpenChargeMapService.add_connections(station_data, @ev_station, current_user_id) != "success"
@@ -145,29 +143,6 @@ class EvStation < ApplicationRecord
            return  "All stations were already created"
         end
     end
-
-
-
-    # def distance(latitude,longitude)
-    #   # Convert latitude and longitude from degrees to radians
-    #   lat1_rad = latitude * Math::PI / 180
-    #   lon1_rad = longitude * Math::PI / 180
-    #   lat2_rad = self.latitude.to_f * Math::PI / 180
-    #   lon2_rad = self.longitude.to_f * Math::PI / 180
-    #   # Earth radius in kilometers
-    #   radius = 6371.0
-
-    #   # Haversine formula
-    #   dlat = lat2_rad - lat1_rad
-    #   dlon = lon2_rad - lon1_rad
-    #   a = Math.sin(dlat / 2) ** 2 + Math.cos(lat1_rad) * Math.cos(lat2_rad) * Math.sin(dlon / 2) ** 2
-    #   c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    #   distance = radius * c
-
-    #   return distance
-
-    # end
-
 
 
 end

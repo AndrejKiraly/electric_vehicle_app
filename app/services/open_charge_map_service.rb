@@ -4,18 +4,18 @@ class OpenChargeMapService
         request_url_openChargeMap= "https://api.openchargemap.io/v3/poi?key=#{apikey}&maxresults=10000&countrycode=#{countrycode}"
         response = RestClient.get(request_url_openChargeMap)
         if response.code == 200
+            
             stations_data = JSON.parse(response.body)
-            Rails.logger.debug("request_url_openChargeMap #{stations_data.count}")
+            Rails.logger.debug("OpenChargeMapService: #{stations_data.length}")
             return stations_data
         else
-            # Handle error case
             return nil
         end
 
     end
 
     def self.deserialize_station(station_data, current_user_id, country_id, uuid)
-        if station_data["AddressInfo"].present?
+        if station_data["AddressInfo"].present? 
             name = station_data["AddressInfo"]["Title"]
             latitude = station_data["AddressInfo"]["Latitude"]
             longitude = station_data["AddressInfo"]["Longitude"]
@@ -27,7 +27,6 @@ class OpenChargeMapService
             email = station_data["AddressInfo"]["ContactEmail"] || "unknown"
             coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
           end
-          
           if station_data["DataProvider"].present?
             source_id = 1
           end      
@@ -36,13 +35,11 @@ class OpenChargeMapService
           else
             usage_type_id = 0
           end
-          limit_time = "Unknown"
           instruction_for_user = "Unknown"
           if station_data["OperatorInfo"].present?
             operator_website_url = station_data["OperatorInfo"]["WebsiteURL"] || "unknown"
           end
           created_by_id = current_user_id 
-            
             @ev_station = EvStation.new(
               name: name,
               address_line: address_line ? address_line : "",
@@ -66,8 +63,7 @@ class OpenChargeMapService
             )
             return @ev_station
     end
-
-
+    
     def self.add_connections(station_data, ev_station, current_user_id)
         if  station_data["Connections"].present?
             connections_data = station_data["Connections"]
@@ -88,7 +84,6 @@ class OpenChargeMapService
                 else
                     is_fast_charge_capable = false
                 end
-
                 if connection_data["CurrentType"].present?
                     current_type_id = connection_data["CurrentType"]["ID"]
                 end
@@ -105,7 +100,6 @@ class OpenChargeMapService
                     quantity = connection_data["Quantity"].to_i
                 end
                 # Create a new Connection object for each connection
-                
                 connection = Connection.new(
                     connection_type_id: connection_type_id ? connection_type_id : 0,
                     is_operational_status: is_operational_status ,
@@ -118,7 +112,6 @@ class OpenChargeMapService
                     created_by_id: current_user_id,
                     updated_by_id: current_user_id
                 )               
-                
                 connection.ev_station = ev_station
                 connection.save
                 rescue => e
@@ -128,6 +121,7 @@ class OpenChargeMapService
         end
         return "success"
     end
+
 
 end
 

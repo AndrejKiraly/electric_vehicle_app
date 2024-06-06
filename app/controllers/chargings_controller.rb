@@ -30,24 +30,30 @@ class ChargingsController < ApplicationController
 
     end
 
+    def show_station_from_charging
+        station = Charging.find(params[:id]).connection.ev_station
+        render json: {"station_id":station.id}
+    end
+
     def monthly_summary
-        @month = params[:month].to_i  # Get the month from the request parameters (ensure it's an integer)
-        @year = params[:year].to_i    # Get the year from the request parameters (ensure it's an integer)
+        @month = params[:month].to_i  
+        @year = params[:year].to_i    
         @user = User.find_by(uid: request.headers['uid'])
-        @chargingMonthlySummary = Charging.monthly_summary(@month, @year)
-        
+        @chargingMonthlySummary = Charging.monthly_summary(@month, @year, current_user.id)
         render json: MonthChargingSummarySerializer.new(@chargingMonthlySummary).serializable_hash
     end
 
     def show
         if params[:id] != "monthly_summary"
             @charging = Charging.find(params[:id])
-            render json: @charging
+            render json: @charging, serializer: ChargingSerializer
         end
     end
 
     def create
-        @charging = Charging.createCharging(charging_params, 1)
+       
+        @charging = Charging.createCharging(charging_params, 1, params[:longitude], params[:latitude])
+       
         if @charging != nil
             if @charging.save
                 render json: @charging, status: :created
@@ -78,7 +84,7 @@ class ChargingsController < ApplicationController
     def destroy
         @charging = Charging.find(params[:id])
         if @charging.destroy
-            head(:ok)
+            head(:no_content)
         else
             head(:unprocessable_entity)
         end
@@ -90,16 +96,16 @@ class ChargingsController < ApplicationController
         params.require(:charging).permit(:vehicle_id, :connection_id, :battery_level_start,
          :battery_level_end, :price, :energy_used,
           :rating, :comment, :start_time, :end_time,
-           :is_finished, :latitude, :longitude)
+           :is_finished)
 
     end
 
-    def adjust_params(params)
-        params[:charging] ||= params
-        params.require(:charging).permit( :vehicle_id, :connection_id,
-         :battery_level_start, :battery_level_end, :price, :energy_used, :rating,
-          :comment, :start_time, :end_time, :is_finished, :latitude, :longitude)
-    end
+    # def adjust_params(params)
+    #     params[:charging] ||= params
+    #     params.require(:charging).permit( :vehicle_id, :connection_id,
+    #      :battery_level_start, :battery_level_end, :price, :energy_used, :rating,
+    #       :comment, :start_time, :end_time, :is_finished)
+    # end
 
 
 

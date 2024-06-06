@@ -1,26 +1,15 @@
 class EnodeVehiclesController < ApplicationController
 
-    before_action :authenticate_user!, only: [:show_user_vehicles,:create,  :delete]
+    before_action :authenticate_user!, only: [:show_user_vehicles,:create,:show_vehicle,  :delete]
 
 
-    def index
-        # Your code for the index method goes here
-        enode_access_code = login_to_enode
-        if enode_access_code.nil?
-            render json: { message: 'Enode vehicles index failed'}
-        end
-        enode_vehicles = get_enode_vehicles(enode_access_code)
-        data = enode_vehicles["data"]
-
-        render json: enode_vehicles#data.map { |vehicle| { id: vehicle["id"], }}
-    end
+    
 
     def show_user_vehicles
         service = EnodeService.new
         enode_user_vehicles = service.get_enode_user_vehicles(current_user.id)
         data = enode_user_vehicles["data"]
-        puts "data #{enode_user_vehicles}" 
-        render json: enode_user_vehicles
+        render json: enode_user_vehicles, status: :ok
     end
 
     def show_vehicle

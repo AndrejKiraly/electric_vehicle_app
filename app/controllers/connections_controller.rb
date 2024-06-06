@@ -29,7 +29,6 @@ class ConnectionsController < ApplicationController
     # POST /connections
     def create
         @connection = Connection.new(connection_params)
-        #connection_params[:created_by_id] = current
         @connection.created_by_id = current_user.id
         @connection.updated_by_id = current_user.id
         if @connection.save
@@ -42,7 +41,7 @@ class ConnectionsController < ApplicationController
     # DELETE /connections/:id
     def destroy
         if @connection.destroy
-            render json: { message: "Connection deleted successfully" }, status: :ok
+            render json: { message: "Connection deleted successfully" }, status: :no_content
         else
             render json: @connection.errors, status: :unprocessable_entity
           
@@ -60,7 +59,6 @@ class ConnectionsController < ApplicationController
             :ev_station_id,
             :is_operational_status, 
             :is_fast_charge_capable, 
-            :charging_level_comment,
             :amps,
             :voltage,
             :power_kw,
@@ -69,7 +67,6 @@ class ConnectionsController < ApplicationController
             :created_by_id, 
             :updated_by_id, 
             :created_at,
-            :charging_level,
             :current_type_id,
             :connection_type_id,
          )
