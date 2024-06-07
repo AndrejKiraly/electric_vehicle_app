@@ -1,10 +1,6 @@
 class EnodeVehiclesController < ApplicationController
 
     before_action :authenticate_user!, only: [:show_user_vehicles,:create,:show_vehicle,  :delete]
-
-
-    
-
     def show_user_vehicles
         service = EnodeService.new
         enode_user_vehicles = service.get_enode_user_vehicles(current_user.id)
@@ -37,11 +33,7 @@ class EnodeVehiclesController < ApplicationController
             render json: { error: e.message }, status: :unprocessable_entity
           end
           
-    end
-
-    def show
-        # Your code for the show method goes here
-    end
+        end
 
     
 end

@@ -5,10 +5,6 @@ class WebhooksController < ApplicationController
     end
   
     def create
-      # Handle the webhook POST request here
-      # Access the request parameters using params[:param_name]
-      # Process the webhook data and perform necessary actions
-      # Extract the JSON array from the params
       events = params[:_json]
       
       # Create a hash to keep track of the most recent event for each vehicle
@@ -32,10 +28,7 @@ class WebhooksController < ApplicationController
         user_id = data['user']['id']
   
         if power_delivery_state == 'PLUGGED_IN:CHARGING'
-          # Create a charging record
-
-
-          if VehicleRoute.find_by(vehicle_id: vehicle['id'], is_finished: false).nil?
+            if VehicleRoute.find_by(vehicle_id: vehicle['id'], is_finished: false).nil?
             Charging.create(
             vehicle_id:vehicle['id'],
             vehicle_route_id: VehicleRoute.find_by(vehicle_id: vehicle['id'], is_finished: false).id,

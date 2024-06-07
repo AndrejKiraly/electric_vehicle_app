@@ -1,6 +1,5 @@
 class EvStationsController < ApplicationController
 
-    #include InvoiceCreator
   before_action :set_ev_station, only: %i[ show update destroy ]
   before_action :authenticate_user!, except: [:index, :show, :show_stations_close_to_charging, :show_chargings_for_station, :show_connections_for_station]
 
@@ -52,7 +51,7 @@ class EvStationsController < ApplicationController
 
   # POST /ev_stations
   def create
-      @ev_station = EvStation.createStation(ev_station_creating_params, 1)
+      @ev_station = EvStation.createStation(ev_station_creating_params, current_user.id)
       if @ev_station.save
         render json: @ev_station, status: :created
       else
@@ -66,10 +65,9 @@ class EvStationsController < ApplicationController
       render json: { message: "You are not authorized to create stations" }, status: :unauthorized
     end
     if Country.find_by(iso_code: params[:countrycode].upcase).nil?
-      debugger
       render json: { message: "Country not found" }, status: :not_found
     else
-      response = EvStation.generate_stations_from_open_charge_maps(params[:countrycode], 1)
+      response = EvStation.generate_stations_from_open_charge_maps(params[:countrycode], current_user.id)
       if response.is_a?(Integer)
         render json: { message: "Stations created successfully. Added #{response} number of Stations" }, status: :created
       elsif response.is_a?(String) && response.include?("All stations were already created")
@@ -101,7 +99,6 @@ class EvStationsController < ApplicationController
   # DELETE /ev_stations/1
   def destroy
     @ev_station.destroy!
-
     render json: {message: "Deleted Succesfully"},status: :no_content
   end
 
@@ -119,7 +116,6 @@ class EvStationsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
     def set_ev_station
       @ev_station = EvStation.find(params[:id])
     end

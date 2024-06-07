@@ -10,17 +10,16 @@ class EvStation < ApplicationRecord
 
     attr_accessor :latitude, :longitude, :distance  # Add these attributes
     
-    
-  
+
     scope :is_free,          ->(value) { where(is_free: value) if value.present? }
-    scope :fast_charge,      ->(value) { joins(:connections).where(connections: { is_fast_charge_capable: value }) if value.present? }
-    scope :current_type,     ->(id)    { joins(:connections).where(connections: { current_type_id: id }) if id.present? }
-    scope :connection_type,  ->(id)    { joins(:connections).where(connections: { connection_type_id: id }) if id.present? }
-    scope :min_power,        ->(kw)    { joins(:connections).where("connections.power_kw > ?", kw) if kw.present? }
+    scope :fast_charge,      ->(value) { where(connections: { is_fast_charge_capable: value }) if value.present? }
+    scope :current_type,     ->(id)    { where(connections: { current_type_id: id }) if id.present? }
+    scope :connection_type,  ->(id)    { where(connections: { connection_type_id: id }) if id.present? }
+    scope :min_power,        ->(kw)    { where("connections.power_kw > ?", kw) if kw.present? }
     
     scope :amenities,        ->(ids)   { joins(:amenities).where(amenities: { id: ids }) if ids.present? }
     scope :usage_types,      ->(ids)   { where(usage_type_id: ids) if ids.present? }
-    scope :connection_types, ->(ids)   { joins(:connections).where(connections: { connection_type_id: ids }) if ids.present? }
+    scope :connection_types, ->(ids)   { where(connections: { connection_type_id: ids }) if ids.present? }
     scope :rating,           ->(rating) { where("rating >= ?", rating) if rating.present? }
     scope :country,          ->(country_id) { where(country_id: country_id) if country_id.present? }
     scope :within_coords, ->(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng) {  
@@ -29,23 +28,21 @@ class EvStation < ApplicationRecord
     scope :within_distance, ->(longitude, latitude, distance) {
       where("ST_Distance(coordinates, ST_MakePoint(?, ?)::geography) < ?", longitude, latitude, distance)
     }
-  
     scope :filter_stations, ->(params) {
       bounds_sw_lat = params[:bounds_sw].split(",")[0].to_f
       bounds_ne_lat = params[:bounds_ne].split(",")[0].to_f
       bounds_sw_lng = params[:bounds_sw].split(",")[1].to_f
       bounds_ne_lng = params[:bounds_ne].split(",")[1].to_f
-      ev_stations = EvStation.all.within_coords(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng)           
-      ev_stations = ev_stations.is_free(params[:is_free])       
+      ev_stations = EvStation.all.within_coords(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng).joins(:connections)
+      ev_stations = ev_stations.is_free(params[:is_free])
       ev_stations = ev_stations.fast_charge(params[:is_fast_charge_capable])
-      ev_stations = ev_stations.current_type(params[:current_type_id]).distinct
+      ev_stations = ev_stations.current_type(params[:current_type_id])
       ev_stations = ev_stations.min_power(params[:power_kw])
-      #ev_stations = ev_stations.rating(params[:rating])
-      ev_stations = ev_stations.connection_type(params[:connection_type_ids]).distinct
-      ev_stations = ev_stations.amenities(params[:amenity_ids]).distinct
-      ev_stations = ev_stations.usage_types(params[:usage_type_ids]).distinct
-      ev_stations
-      
+      ev_stations = ev_stations.rating(params[:rating])
+      ev_stations = ev_stations.connection_type(params[:connection_type_ids])
+      ev_stations = ev_stations.amenities(params[:amenity_ids])
+      ev_stations = ev_stations.usage_types(params[:usage_type_ids])
+      ev_stations.distinct      
     }
 
     def self.distance_from_point(lng, lat, id)
@@ -63,9 +60,6 @@ class EvStation < ApplicationRecord
         ", lng, lat, id])
         end
   
-        
-  
-    
     def update_rating!
       update(
         rating: chargings.where.not(rating: 0).average(:rating) || 0.0,
@@ -132,6 +126,4 @@ class EvStation < ApplicationRecord
            return  "All stations were already created"
         end
     end
-
-
 end

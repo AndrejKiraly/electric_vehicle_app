@@ -18,7 +18,6 @@ class VehicleRoutesController < ApplicationController
         else
             render json: @vehicle_route.errors, status: :unprocessable_entity
         end
-      
     end
 
     def create_tracked_route
@@ -55,8 +54,8 @@ class VehicleRoutesController < ApplicationController
             @vehicle_route.is_finished = true
             total_battery_capacity = 220 * 0.9  #vehicle['chargeState']['batteryCapacity'] * #vehicle['chargeState']['chargingLimit']
             @vehicle_route.energy_used = chargingService.calculate_total_energy_used(@vehicle_route, chargings, total_battery_capacity)
-            @vehicle_route.polyline = params[:polyline]
-            
+            @vehicle_route.polyline = FastPolylines::Encoder.encode(params[:coordinates])
+            params[:polyline]
 
             if @vehicle_route.save
                 render  json: {route: @vehicle_route, chargings: chargings}, status: :created
@@ -66,8 +65,6 @@ class VehicleRoutesController < ApplicationController
         else 
             render json: { error: "Route has already finished" }, status: :unprocessable_entity
         end
-        
-    
     end
 
     def end_all_routes

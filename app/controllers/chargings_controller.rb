@@ -1,14 +1,8 @@
 
 
 class ChargingsController < ApplicationController
+    before_action :authenticate_user!, except: [:show_station_with_chargings, :show_station_from_charging, :show_all, :index, :show]
     
-    #before_action :authenticate_user!
-    
-    
-    
-
-
-
     def show_station_with_chargings
         @stations = EvStation.where(id: 1001)
         render json: @stations.map {|station| {station: station, connections: station.connections.map {|connection| {id: connection.id, chargings: connection.chargings.map {|charging| {id: charging.id, user_id: charging.user_id, vehicle_id: charging.vehicle_id, connection_id: charging.connection_id, battery_level_start: charging.battery_level_start, battery_level_end: charging.battery_level_end, price: charging.price, energy_used: charging.energy_used, rating: charging.rating, comment: charging.comment, start_time: charging.start_time, end_time: charging.end_time}}}}} }
@@ -18,16 +12,12 @@ class ChargingsController < ApplicationController
         #@chargings = Charging.where(user_id: current_user.id, )
         @chargings = Charging.all.where(user_id: User.find_by(uid: request.headers['uid']).id)
         @chargings = @chargings.where(is_finished: true)
-        #Rails.logger.debug("charging_time: #{ChargingLibrary.calculateChargingTime(100, 16, 60, 100, 16)} ")
-        render json: @chargings
-        #render json: {charging: @chargings, charging_time: @chargings.calculate_charging_time("9cefa962-c2f4-4b43-b636-6632c5cdedc5",1, 50)}
-    
+        render json: @chargings    
     end
 
     def show_all
         @chargings = Charging.all
         render json: @chargings
-
     end
 
     def show_station_from_charging
@@ -38,7 +28,7 @@ class ChargingsController < ApplicationController
     def monthly_summary
         @month = params[:month].to_i  
         @year = params[:year].to_i    
-        @user = User.find_by(uid: request.headers['uid'])
+        @user = current_user
         @chargingMonthlySummary = Charging.monthly_summary(@month, @year, current_user.id)
         render json: MonthChargingSummarySerializer.new(@chargingMonthlySummary).serializable_hash
     end
@@ -51,9 +41,7 @@ class ChargingsController < ApplicationController
     end
 
     def create
-       
-        @charging = Charging.createCharging(charging_params, 1, params[:longitude], params[:latitude])
-       
+        @charging = Charging.createCharging(charging_params, current_user.id, params[:longitude], params[:latitude])
         if @charging != nil
             if @charging.save
                 render json: @charging, status: :created
@@ -99,14 +87,5 @@ class ChargingsController < ApplicationController
            :is_finished)
 
     end
-
-    # def adjust_params(params)
-    #     params[:charging] ||= params
-    #     params.require(:charging).permit( :vehicle_id, :connection_id,
-    #      :battery_level_start, :battery_level_end, :price, :energy_used, :rating,
-    #       :comment, :start_time, :end_time, :is_finished)
-    # end
-
-
 
 end
