@@ -15,7 +15,6 @@ class EvStationsController < ApplicationController
   def index
     ev_stations = EvStation.filter_stations(params)
     factory = RGeo::Geographic.spherical_factory(srid: 4326)
-    
     ev_stations.each do |station|
       point = factory.point(params[:lng], params[:lat])
       station.distance = station.coordinates.distance(point) / 1000
@@ -66,6 +65,10 @@ class EvStationsController < ApplicationController
     if current_user.is_admin == false
       render json: { message: "You are not authorized to create stations" }, status: :unauthorized
     end
+    if Country.find_by(iso_code: params[:countrycode].upcase).nil?
+      debugger
+      render json: { message: "Country not found" }, status: :not_found
+    else
       response = EvStation.generate_stations_from_open_charge_maps(params[:countrycode], 1)
       if response.is_a?(Integer)
         render json: { message: "Stations created successfully. Added #{response} number of Stations" }, status: :created
@@ -78,12 +81,14 @@ class EvStationsController < ApplicationController
       else
         render json: { message: "Unkown error" }, status: :unprocessable_entity
       end
+    end
+    
   end
     
   # PATCH/PUT /ev_stations/1
   def update
     if @ev_station.update(ev_station_creating_params)
-      @ev_station.updated_by_id = 1
+      @ev_station.updated_by_id = current_user.id
       latitude = params[:latitude]
       longitude = params[:longitude]
       @ev_station.coordinates = RGeo::Geographic.spherical_factory(srid: 4326).point(longitude, latitude)
@@ -128,6 +133,7 @@ class EvStationsController < ApplicationController
         :operator_website_url,:is_free,:open_hours, :usage_type_id, :source_id, 
         :country_id,amenity_ids: [],connection_types_ids:[] )
     end
+
 
 
 end

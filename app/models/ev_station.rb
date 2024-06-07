@@ -35,28 +35,17 @@ class EvStation < ApplicationRecord
       bounds_ne_lat = params[:bounds_ne].split(",")[0].to_f
       bounds_sw_lng = params[:bounds_sw].split(",")[1].to_f
       bounds_ne_lng = params[:bounds_ne].split(",")[1].to_f
-      
-      ev_stations = EvStation.all.within_coords(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng)     
-      ev_stations = ev_stations.is_free(params[:is_free]) 
-      ev_stations = ev_stations.fast_charge(params[:is_fast_charge_capable]) 
-      ev_stations = ev_stations.current_type(params[:current_type_id])
-      ev_stations = ev_stations.min_power(params[:power_kw]) 
-      ev_stations = ev_stations.rating(params[:rating])
-
-      if params[:connection_type_ids].present?
-      ev_stations = ev_stations.connection_type(params[:connection_type_ids].scan(/\d+/).map(&:to_i))
-      end
-      
-      if params[:amenity_ids].present?
-        amenity_ids = params[:amenity_ids].scan(/\d+/).map(&:to_i)
-        ev_stations = ev_stations.amenities(amenity_ids)
-      end
-      
-      if params[:usage_type_ids].present?
-        ev_stations = ev_stations.usage_types(params[:usage_type_ids].scan(/\d+/).map(&:to_i))
-      end 
-      
+      ev_stations = EvStation.all.within_coords(bounds_sw_lat, bounds_sw_lng, bounds_ne_lat, bounds_ne_lng)           
+      ev_stations = ev_stations.is_free(params[:is_free])       
+      ev_stations = ev_stations.fast_charge(params[:is_fast_charge_capable])
+      ev_stations = ev_stations.current_type(params[:current_type_id]).distinct
+      ev_stations = ev_stations.min_power(params[:power_kw])
+      #ev_stations = ev_stations.rating(params[:rating])
+      ev_stations = ev_stations.connection_type(params[:connection_type_ids]).distinct
+      ev_stations = ev_stations.amenities(params[:amenity_ids]).distinct
+      ev_stations = ev_stations.usage_types(params[:usage_type_ids]).distinct
       ev_stations
+      
     }
 
     def self.distance_from_point(lng, lat, id)
@@ -79,8 +68,8 @@ class EvStation < ApplicationRecord
     
     def update_rating!
       update(
-        rating: chargings.where.not(rating: 0).average(:rating),
-        user_rating_total: chargings.where.not(rating: 0).count
+        rating: chargings.where.not(rating: 0).average(:rating) || 0.0,
+        user_rating_total: chargings.where.not(rating: 0).count || 0
       )
     end
 
